@@ -213,26 +213,31 @@ export default function PrayerTimesScreen(): React.JSX.Element {
               </View>
 
               {/* Prayer Rows */}
-              {prayers.map((prayer, index) => (
-                <View 
-                  key={prayer.name} 
-                  style={[
-                    styles.prayerRow,
-                    index === prayers.length - 1 && styles.lastPrayerRow
-                  ]}
-                >
-                  <View style={styles.prayerNameContainer}>
-                    <View style={styles.iconContainer}>
-                      <Ionicons name={prayer.icon as any} size={20} color="#60a5fa" />
+              {prayers.map((prayer, index) => {
+                const isNextPrayer = nextPrayer?.name === prayer.name;
+                
+                return (
+                  <View 
+                    key={prayer.name} 
+                    style={[
+                      styles.prayerRow,
+                      index === prayers.length - 1 && styles.lastPrayerRow,
+                      isNextPrayer && styles.nextPrayerRow
+                    ]}
+                  >
+                    <View style={styles.prayerNameContainer}>
+                      <View style={styles.iconContainer}>
+                        <Ionicons name={prayer.icon as any} size={20} color="#60a5fa" />
+                      </View>
+                      <Text style={styles.prayerName}>{prayer.name}</Text>
                     </View>
-                    <Text style={styles.prayerName}>{prayer.name}</Text>
+                    <Text style={styles.prayerTime}>{prayer.adhan || '--:--'}</Text>
+                    <Text style={styles.prayerTime}>
+                      {prayer.showIqama ? (prayer.iqama || '--:--') : ''}
+                    </Text>
                   </View>
-                  <Text style={styles.prayerTime}>{prayer.adhan || '--:--'}</Text>
-                  <Text style={styles.prayerTime}>
-                    {prayer.showIqama ? (prayer.iqama || '--:--') : ''}
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
             {/* Next Prayer Countdown */}
@@ -363,6 +368,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  nextPrayerRow: {
+    backgroundColor: 'rgba(96, 165, 250, 0.2)',
   },
   lastPrayerRow: {
     borderBottomWidth: 0,
