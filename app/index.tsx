@@ -1,29 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import custom components
 import LoadingScreen from '../components/LoadingScreen';
 
 // Import custom hooks
-import { useFirebaseData } from '../hooks/useFirebaseData';
 import { useAutoFetchPrayerTimes } from '../hooks/useAutoFetchPrayerTimes';
+import { useEvents } from '../hooks/useEvents';
+import { useFirebaseData } from '../hooks/useFirebaseData';
 
 // Import types and utility
-import { Prayer, calculateIqamaTime } from '../types';
+import { Prayer, calculateIqamaTime, getCategoryColor } from '../types';
 
-type TabType = 'prayer' | 'jumuah';
+type TabType = 'prayer' | 'jumuah' | 'events';
 
 export default function PrayerTimesScreen(): React.JSX.Element {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [activeTab, setActiveTab] = useState<TabType>('prayer');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
-  // Load data from Firebase using custom hook
+  // Load data from Firebase using custom hooks
   const { prayerTimes, jumuahTimes, mosqueSettings, loading } = useFirebaseData();
+  const { events, upcomingEvents, loading: eventsLoading } = useEvents();
   
-  // Auto-fetch all prayer times if location is set
-  const { isFetching: fetchingPrayerTimes } = useAutoFetchPrayerTimes(prayerTimes, mosqueSettings);
+  // Auto-fetch Maghrib if enabled
+  const { isFetching: fetchingMaghrib } = useAutoFetchPrayerTimes(prayerTimes, mosqueSettings);
 
   // Update current time every minute
   useEffect(() => {
@@ -53,10 +56,24 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     });
   };
 
+  // Format event date
+  const formatEventDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
   // Calculate Islamic (Hijri) date
   const getIslamicDate = (date: Date): string => {
     try {
-      // Using Intl.DateTimeFormat for Hijri calendar
       const islamicDate = new Intl.DateTimeFormat('en-US-u-ca-islamic', {
         day: 'numeric',
         month: 'long',
@@ -82,7 +99,7 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     return calculateIqamaTime(adhanTime, iqamaType, fixedIqama, offset);
   };
 
-  // Parse time string (e.g., "05:30 AM") to Date object for today
+  // Parse time string to Date object
   const parseTimeToDate = (timeString: string | undefined): Date | null => {
     if (!timeString) return null;
     
@@ -96,7 +113,6 @@ export default function PrayerTimesScreen(): React.JSX.Element {
       const minutes = parseInt(timeMatch[2]);
       const period = timeMatch[3].toUpperCase();
       
-      // Convert to 24-hour format
       if (period === 'PM' && hours !== 12) {
         hours += 12;
       } else if (period === 'AM' && hours === 12) {
@@ -111,7 +127,7 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     }
   };
 
-  // Calculate next prayer and time remaining
+  // Calculate next prayer
   const getNextPrayer = (): { name: string; timeRemaining: string } | null => {
     const now = new Date();
     
@@ -121,7 +137,6 @@ export default function PrayerTimesScreen(): React.JSX.Element {
       iqamaTime: parseTimeToDate(getDisplayedIqamaTime(prayer))
     }));
 
-    // Find next prayer (Iqama time that's in the future)
     for (const prayer of prayerTimesWithDates) {
       if (prayer.iqamaTime && prayer.iqamaTime > now) {
         const diffMs = prayer.iqamaTime.getTime() - now.getTime();
@@ -140,7 +155,7 @@ export default function PrayerTimesScreen(): React.JSX.Element {
       }
     }
     
-    // If no prayer found today, next prayer is Fajr tomorrow
+    // Next prayer is Fajr tomorrow
     const fajrIqama = getDisplayedIqamaTime('fajr');
     const fajrTime = parseTimeToDate(fajrIqama);
     if (fajrTime) {
@@ -162,51 +177,36 @@ export default function PrayerTimesScreen(): React.JSX.Element {
 
   const nextPrayer = getNextPrayer();
 
-  // Show loading screen while data is being fetched
+  // Show loading screen
   if (loading) {
     return <LoadingScreen />;
   }
 
-  // Show a subtle indicator if prayer times are being auto-fetched
-  const showFetchIndicator = fetchingPrayerTimes;
+  const showMaghribFetchIndicator = fetchingMaghrib && mosqueSettings?.auto_fetch_maghrib;
 
-  // Prayer times array with icons
-  const prayers: Array<Prayer & { icon: string; showIqama: boolean }> = [
-    { 
-      name: 'Fajr', 
-      adhan: prayerTimes?.fajr_adhan, 
-      iqama: getDisplayedIqamaTime('fajr'), 
-      icon: 'moon', 
-      showIqama: true 
-    },
-    { 
-      name: 'Dhuhr', 
-      adhan: prayerTimes?.dhuhr_adhan, 
-      iqama: getDisplayedIqamaTime('dhuhr'), 
-      icon: 'partly-sunny', 
-      showIqama: true 
-    },
-    { 
-      name: 'Asr', 
-      adhan: prayerTimes?.asr_adhan, 
-      iqama: getDisplayedIqamaTime('asr'), 
-      icon: 'sunny-outline', 
-      showIqama: true 
-    },
-    { 
-      name: 'Maghrib', 
-      adhan: prayerTimes?.maghrib_adhan, 
-      iqama: getDisplayedIqamaTime('maghrib'), 
-      icon: 'moon-outline', 
-      showIqama: true 
-    },
-    { 
-      name: 'Isha', 
-      adhan: prayerTimes?.isha_adhan, 
-      iqama: getDisplayedIqamaTime('isha'), 
-      icon: 'moon', 
-      showIqama: true 
-    },
+  // Prayer times array
+  const prayers: (Prayer & { icon: string; showIqama: boolean })[] = [
+    { name: 'Fajr', adhan: prayerTimes?.fajr_adhan, iqama: getDisplayedIqamaTime('fajr'), icon: 'moon', showIqama: true },
+    { name: 'Dhuhr', adhan: prayerTimes?.dhuhr_adhan, iqama: getDisplayedIqamaTime('dhuhr'), icon: 'partly-sunny', showIqama: true },
+    { name: 'Asr', adhan: prayerTimes?.asr_adhan, iqama: getDisplayedIqamaTime('asr'), icon: 'sunny-outline', showIqama: true },
+    { name: 'Maghrib', adhan: prayerTimes?.maghrib_adhan, iqama: getDisplayedIqamaTime('maghrib'), icon: 'moon-outline', showIqama: true },
+    { name: 'Isha', adhan: prayerTimes?.isha_adhan, iqama: getDisplayedIqamaTime('isha'), icon: 'moon', showIqama: true },
+  ];
+
+  // Filter events by category
+  const filteredEvents = selectedCategory === 'all' 
+    ? upcomingEvents 
+    : upcomingEvents.filter(event => event.category === selectedCategory);
+
+  // Event categories for filter
+  const categories = [
+    { id: 'all', label: 'All' },
+    { id: 'lecture', label: 'Lectures' },
+    { id: 'community', label: 'Community' },
+    { id: 'youth', label: 'Youth' },
+    { id: 'women', label: 'Women' },
+    { id: 'education', label: 'Education' },
+    { id: 'charity', label: 'Charity' },
   ];
 
   return (
@@ -224,11 +224,11 @@ export default function PrayerTimesScreen(): React.JSX.Element {
           </Text>
         </View>
 
-        {/* Prayer Times Fetch Indicator */}
-        {showFetchIndicator && (
+        {/* Maghrib Fetch Indicator */}
+        {showMaghribFetchIndicator && (
           <View style={styles.fetchIndicator}>
             <Text style={styles.fetchIndicatorText}>
-              🕌 Updating prayer times...
+              🌅 Updating Maghrib time...
             </Text>
           </View>
         )}
@@ -248,7 +248,15 @@ export default function PrayerTimesScreen(): React.JSX.Element {
             onPress={() => setActiveTab('jumuah')}
           >
             <Text style={[styles.tabText, activeTab === 'jumuah' && styles.activeTabText]}>
-              Juma'ah Times
+              Juma'ah
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'events' && styles.activeTab]}
+            onPress={() => setActiveTab('events')}
+          >
+            <Text style={[styles.tabText, activeTab === 'events' && styles.activeTabText]}>
+              Events
             </Text>
           </TouchableOpacity>
         </View>
@@ -256,9 +264,7 @@ export default function PrayerTimesScreen(): React.JSX.Element {
         {/* Prayer Times Tab */}
         {activeTab === 'prayer' && (
           <>
-            {/* Prayer Times Table */}
             <View style={styles.tableContainer}>
-              {/* Table Header */}
               <View style={styles.tableHeader}>
                 <View style={styles.prayerNameColumn} />
                 <View style={styles.timeColumn}>
@@ -269,7 +275,6 @@ export default function PrayerTimesScreen(): React.JSX.Element {
                 </View>
               </View>
 
-              {/* Prayer Rows */}
               {prayers.map((prayer, index) => {
                 const isNextPrayer = nextPrayer?.name === prayer.name;
                 
@@ -297,7 +302,6 @@ export default function PrayerTimesScreen(): React.JSX.Element {
               })}
             </View>
 
-            {/* Next Prayer Countdown */}
             {nextPrayer && (
               <View style={styles.nextPrayerContainer}>
                 <Text style={styles.nextPrayerText}>
@@ -338,6 +342,101 @@ export default function PrayerTimesScreen(): React.JSX.Element {
             <Text style={styles.jumuahNote}>
               Please arrive 10-15 minutes before Khutbah
             </Text>
+          </View>
+        )}
+
+        {/* Events Tab */}
+        {activeTab === 'events' && (
+          <View style={styles.eventsTabContainer}>
+            {/* Category Filter */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryFilter}>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={[
+                    styles.categoryButton,
+                    selectedCategory === cat.id && styles.categoryButtonActive
+                  ]}
+                  onPress={() => setSelectedCategory(cat.id)}
+                >
+                  <Text style={[
+                    styles.categoryButtonText,
+                    selectedCategory === cat.id && styles.categoryButtonTextActive
+                  ]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Events List */}
+            {eventsLoading ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>Loading events...</Text>
+              </View>
+            ) : filteredEvents.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="calendar-outline" size={64} color="#9ca3af" />
+                <Text style={styles.emptyStateTitle}>No Upcoming Events</Text>
+                <Text style={styles.emptyStateText}>
+                  {selectedCategory === 'all' 
+                    ? 'Check back soon for new events!' 
+                    : `No upcoming ${selectedCategory} events`}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.eventsList}>
+                {filteredEvents.map(event => {
+                  const categoryColors = getCategoryColor(event.category);
+                  
+                  return (
+                    <View key={event.id} style={styles.eventCard}>
+                      <View style={[styles.eventCategory, { backgroundColor: categoryColors.bg }]}>
+                        <Text style={[styles.eventCategoryText, { color: categoryColors.text }]}>
+                          {event.category.toUpperCase()}
+                        </Text>
+                      </View>
+                      
+                      <Text style={styles.eventTitle}>{event.title}</Text>
+                      
+                      <View style={styles.eventDetail}>
+                        <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                        <Text style={styles.eventDetailText}>
+                          {formatEventDate(event.date)} at {event.time}
+                        </Text>
+                      </View>
+                      
+                      {event.location && (
+                        <View style={styles.eventDetail}>
+                          <Ionicons name="location-outline" size={16} color="#6b7280" />
+                          <Text style={styles.eventDetailText}>{event.location}</Text>
+                        </View>
+                      )}
+                      
+                      {event.speaker && (
+                        <View style={styles.eventDetail}>
+                          <Ionicons name="person-outline" size={16} color="#6b7280" />
+                          <Text style={styles.eventDetailText}>Speaker: {event.speaker}</Text>
+                        </View>
+                      )}
+                      
+                      {event.rsvp_enabled && (
+                        <View style={styles.eventDetail}>
+                          <Ionicons name="people-outline" size={16} color="#6b7280" />
+                          <Text style={styles.eventDetailText}>
+                            {event.rsvp_count || 0} / {event.rsvp_limit || 'Unlimited'} RSVPs
+                          </Text>
+                        </View>
+                      )}
+                      
+                      <Text style={styles.eventDescription} numberOfLines={3}>
+                        {event.description}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -516,5 +615,92 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1e3a8a',
     fontWeight: '600',
+  },
+  eventsTabContainer: {
+    padding: 15,
+  },
+  categoryFilter: {
+    marginBottom: 15,
+  },
+  categoryButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#e5e7eb',
+    marginRight: 8,
+  },
+  categoryButtonActive: {
+    backgroundColor: '#1e3a8a',
+  },
+  categoryButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  categoryButtonTextActive: {
+    color: '#fff',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  eventsList: {
+    gap: 15,
+  },
+  eventCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  eventCategory: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  eventCategoryText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 12,
+  },
+  eventDetail: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  eventDetailText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 8,
+    lineHeight: 20,
   },
 });

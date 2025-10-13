@@ -51,6 +51,24 @@ export interface MosqueSettings {
   last_updated?: string;
 }
 
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // ISO date string (YYYY-MM-DD)
+  time: string; // e.g., "7:00 PM"
+  location?: string;
+  category: 'lecture' | 'community' | 'youth' | 'women' | 'education' | 'charity' | 'other';
+  speaker?: string;
+  image_url?: string;
+  rsvp_enabled?: boolean;
+  rsvp_limit?: number;
+  rsvp_count?: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Component Props Types
 
 export interface Prayer {
@@ -106,5 +124,25 @@ export const calculateIqamaTime = (
   } catch (error) {
     console.error('Error calculating iqama time:', error);
     return '--:--';
+  }
+};
+
+// Utility function to get category color
+export const getCategoryColor = (category: string): { bg: string; text: string } => {
+  switch (category) {
+    case 'lecture':
+      return { bg: '#dbeafe', text: '#1e40af' };
+    case 'community':
+      return { bg: '#fef3c7', text: '#92400e' };
+    case 'youth':
+      return { bg: '#fce7f3', text: '#9f1239' };
+    case 'women':
+      return { bg: '#f3e8ff', text: '#6b21a8' };
+    case 'education':
+      return { bg: '#dcfce7', text: '#15803d' };
+    case 'charity':
+      return { bg: '#fff7ed', text: '#c2410c' };
+    default:
+      return { bg: '#e5e7eb', text: '#374151' };
   }
 };
