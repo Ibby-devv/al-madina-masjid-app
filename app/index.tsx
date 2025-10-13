@@ -6,11 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 // Import custom components
 import LoadingScreen from '../components/LoadingScreen';
 
-// Import custom hook
+// Import custom hooks
 import { useFirebaseData } from '../hooks/useFirebaseData';
+import { useAutoFetchMaghrib } from '../hooks/useAutoFetchMaghrib';
 
-// Import types
-import { Prayer } from '../types';
+// Import types and utility
+import { Prayer, calculateIqamaTime } from '../types';
 
 type TabType = 'prayer' | 'jumuah';
 
@@ -20,6 +21,9 @@ export default function PrayerTimesScreen(): React.JSX.Element {
   
   // Load data from Firebase using custom hook
   const { prayerTimes, jumuahTimes, mosqueSettings, loading } = useFirebaseData();
+  
+  // Auto-fetch Maghrib if enabled
+  const { isFetching: fetchingMaghrib } = useAutoFetchMaghrib(prayerTimes, mosqueSettings);
 
   // Update current time every minute
   useEffect(() => {
@@ -66,6 +70,18 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     }
   };
 
+  // Get the displayed iqama time (either fixed or calculated from offset)
+  const getDisplayedIqamaTime = (prayer: string): string => {
+    if (!prayerTimes) return '--:--';
+    
+    const adhanTime = (prayerTimes as any)[`${prayer}_adhan`];
+    const iqamaType = (prayerTimes as any)[`${prayer}_iqama_type`] || 'fixed';
+    const fixedIqama = (prayerTimes as any)[`${prayer}_iqama`];
+    const offset = (prayerTimes as any)[`${prayer}_iqama_offset`];
+    
+    return calculateIqamaTime(adhanTime, iqamaType, fixedIqama, offset);
+  };
+
   // Parse time string (e.g., "05:30 AM") to Date object for today
   const parseTimeToDate = (timeString: string | undefined): Date | null => {
     if (!timeString) return null;
@@ -99,13 +115,11 @@ export default function PrayerTimesScreen(): React.JSX.Element {
   const getNextPrayer = (): { name: string; timeRemaining: string } | null => {
     const now = new Date();
     
-    const prayerTimesWithDates = [
-      { name: 'Fajr', iqamaTime: parseTimeToDate(prayerTimes?.fajr_iqama) },
-      { name: 'Dhuhr', iqamaTime: parseTimeToDate(prayerTimes?.dhuhr_iqama) },
-      { name: 'Asr', iqamaTime: parseTimeToDate(prayerTimes?.asr_iqama) },
-      { name: 'Maghrib', iqamaTime: parseTimeToDate(prayerTimes?.maghrib_iqama) },
-      { name: 'Isha', iqamaTime: parseTimeToDate(prayerTimes?.isha_iqama) },
-    ];
+    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    const prayerTimesWithDates = prayers.map(prayer => ({
+      name: prayer.charAt(0).toUpperCase() + prayer.slice(1),
+      iqamaTime: parseTimeToDate(getDisplayedIqamaTime(prayer))
+    }));
 
     // Find next prayer (Iqama time that's in the future)
     for (const prayer of prayerTimesWithDates) {
@@ -127,7 +141,8 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     }
     
     // If no prayer found today, next prayer is Fajr tomorrow
-    const fajrTime = parseTimeToDate(prayerTimes?.fajr_iqama);
+    const fajrIqama = getDisplayedIqamaTime('fajr');
+    const fajrTime = parseTimeToDate(fajrIqama);
     if (fajrTime) {
       const tomorrow = new Date(fajrTime);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -152,13 +167,46 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     return <LoadingScreen />;
   }
 
+  // Show a subtle indicator if Maghrib is being auto-fetched
+  const showMaghribFetchIndicator = fetchingMaghrib && mosqueSettings?.auto_fetch_maghrib;
+
   // Prayer times array with icons
   const prayers: Array<Prayer & { icon: string; showIqama: boolean }> = [
-    { name: 'Fajr', adhan: prayerTimes?.fajr_adhan, iqama: prayerTimes?.fajr_iqama, icon: 'moon', showIqama: true },
-    { name: 'Dhuhr', adhan: prayerTimes?.dhuhr_adhan, iqama: prayerTimes?.dhuhr_iqama, icon: 'partly-sunny', showIqama: true },
-    { name: 'Asr', adhan: prayerTimes?.asr_adhan, iqama: prayerTimes?.asr_iqama, icon: 'sunny-outline', showIqama: true },
-    { name: 'Maghrib', adhan: prayerTimes?.maghrib_adhan, iqama: prayerTimes?.maghrib_iqama, icon: 'moon-outline', showIqama: true },
-    { name: 'Isha', adhan: prayerTimes?.isha_adhan, iqama: prayerTimes?.isha_iqama, icon: 'moon', showIqama: true },
+    { 
+      name: 'Fajr', 
+      adhan: prayerTimes?.fajr_adhan, 
+      iqama: getDisplayedIqamaTime('fajr'), 
+      icon: 'moon', 
+      showIqama: true 
+    },
+    { 
+      name: 'Dhuhr', 
+      adhan: prayerTimes?.dhuhr_adhan, 
+      iqama: getDisplayedIqamaTime('dhuhr'), 
+      icon: 'partly-sunny', 
+      showIqama: true 
+    },
+    { 
+      name: 'Asr', 
+      adhan: prayerTimes?.asr_adhan, 
+      iqama: getDisplayedIqamaTime('asr'), 
+      icon: 'sunny-outline', 
+      showIqama: true 
+    },
+    { 
+      name: 'Maghrib', 
+      adhan: prayerTimes?.maghrib_adhan, 
+      iqama: getDisplayedIqamaTime('maghrib'), 
+      icon: 'moon-outline', 
+      showIqama: true 
+    },
+    { 
+      name: 'Isha', 
+      adhan: prayerTimes?.isha_adhan, 
+      iqama: getDisplayedIqamaTime('isha'), 
+      icon: 'moon', 
+      showIqama: true 
+    },
   ];
 
   return (
@@ -175,6 +223,15 @@ export default function PrayerTimesScreen(): React.JSX.Element {
             {formatDate(currentTime)} | {getIslamicDate(currentTime)}
           </Text>
         </View>
+
+        {/* Maghrib Fetch Indicator */}
+        {showMaghribFetchIndicator && (
+          <View style={styles.fetchIndicator}>
+            <Text style={styles.fetchIndicatorText}>
+              🌅 Updating Maghrib time...
+            </Text>
+          </View>
+        )}
 
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -312,6 +369,17 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 14,
     color: '#93c5fd',
+  },
+  fetchIndicator: {
+    backgroundColor: '#fef3c7',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    alignItems: 'center',
+  },
+  fetchIndicatorText: {
+    fontSize: 12,
+    color: '#92400e',
+    fontWeight: '500',
   },
   tabs: {
     flexDirection: 'row',
