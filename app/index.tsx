@@ -8,7 +8,7 @@ import LoadingScreen from '../components/LoadingScreen';
 
 // Import custom hooks
 import { useFirebaseData } from '../hooks/useFirebaseData';
-import { useAutoFetchMaghrib } from '../hooks/useAutoFetchMaghrib';
+import { useAutoFetchPrayerTimes } from '../hooks/useAutoFetchPrayerTimes';
 
 // Import types and utility
 import { Prayer, calculateIqamaTime } from '../types';
@@ -22,8 +22,8 @@ export default function PrayerTimesScreen(): React.JSX.Element {
   // Load data from Firebase using custom hook
   const { prayerTimes, jumuahTimes, mosqueSettings, loading } = useFirebaseData();
   
-  // Auto-fetch Maghrib if enabled
-  const { isFetching: fetchingMaghrib } = useAutoFetchMaghrib(prayerTimes, mosqueSettings);
+  // Auto-fetch all prayer times if location is set
+  const { isFetching: fetchingPrayerTimes } = useAutoFetchPrayerTimes(prayerTimes, mosqueSettings);
 
   // Update current time every minute
   useEffect(() => {
@@ -167,8 +167,8 @@ export default function PrayerTimesScreen(): React.JSX.Element {
     return <LoadingScreen />;
   }
 
-  // Show a subtle indicator if Maghrib is being auto-fetched
-  const showMaghribFetchIndicator = fetchingMaghrib && mosqueSettings?.auto_fetch_maghrib;
+  // Show a subtle indicator if prayer times are being auto-fetched
+  const showFetchIndicator = fetchingPrayerTimes;
 
   // Prayer times array with icons
   const prayers: Array<Prayer & { icon: string; showIqama: boolean }> = [
@@ -224,11 +224,11 @@ export default function PrayerTimesScreen(): React.JSX.Element {
           </Text>
         </View>
 
-        {/* Maghrib Fetch Indicator */}
-        {showMaghribFetchIndicator && (
+        {/* Prayer Times Fetch Indicator */}
+        {showFetchIndicator && (
           <View style={styles.fetchIndicator}>
             <Text style={styles.fetchIndicatorText}>
-              🌅 Updating Maghrib time...
+              🕌 Updating prayer times...
             </Text>
           </View>
         )}

@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { PrayerTimes, MosqueSettings } from '../types';
 
-export const useAutoFetchMaghrib = (
+export const useAutoFetchPrayerTimes = (
   prayerTimes: PrayerTimes | null,
   mosqueSettings: MosqueSettings | null
 ) => {
@@ -13,18 +13,17 @@ export const useAutoFetchMaghrib = (
   useEffect(() => {
     // Only run if we have the necessary data
     if (!prayerTimes || !mosqueSettings) return;
-    if (!mosqueSettings.auto_fetch_maghrib) return;
     if (!mosqueSettings.latitude || !mosqueSettings.longitude) return;
 
-    // Check if we should fetch Maghrib
-    const shouldFetch = checkIfShouldFetchMaghrib();
+    // Check if we should fetch prayer times
+    const shouldFetch = checkIfShouldFetchPrayerTimes();
     
     if (shouldFetch) {
-      fetchAndUpdateMaghrib();
+      fetchAndUpdateAllPrayerTimes();
     }
   }, [prayerTimes, mosqueSettings]);
 
-  const checkIfShouldFetchMaghrib = (): boolean => {
+  const checkIfShouldFetchPrayerTimes = (): boolean => {
     if (!prayerTimes) return false;
 
     const today = new Date().toISOString().split('T')[0];
@@ -34,18 +33,18 @@ export const useAutoFetchMaghrib = (
       return false;
     }
 
-    // Check if Maghrib was already updated today
+    // Check if prayer times were already updated today
     const lastUpdate = prayerTimes.last_updated;
     
     if (lastUpdate === today) {
-      console.log('Maghrib already updated today');
+      console.log('Prayer times already updated today');
       return false;
     }
 
     return true;
   };
 
-  const fetchAndUpdateMaghrib = async (): Promise<void> => {
+  const fetchAndUpdateAllPrayerTimes = async (): Promise<void> => {
     if (isFetching || !mosqueSettings) return;
 
     setIsFetching(true);
@@ -53,7 +52,7 @@ export const useAutoFetchMaghrib = (
     setLastFetchAttempt(today);
 
     try {
-      console.log('🌅 Auto-fetching Maghrib time...');
+      console.log('🕌 Auto-fetching all prayer times...');
       
       const timestamp = Math.floor(Date.now() / 1000);
       const method = mosqueSettings.calculation_method || 3;
@@ -68,43 +67,54 @@ export const useAutoFetchMaghrib = (
 
       const data = await response.json();
       
-      if (data.code !== 200 || !data.data?.timings?.Maghrib) {
+      if (data.code !== 200 || !data.data?.timings) {
         throw new Error('Invalid API response');
       }
 
-      // Convert 24-hour format to 12-hour format
-      const maghribTime24 = data.data.timings.Maghrib;
-      const [hours24, minutes] = maghribTime24.split(':');
-      let hours = parseInt(hours24);
-      const period = hours >= 12 ? 'PM' : 'AM';
+      // Convert all prayer times from 24-hour to 12-hour format
+      const timings = data.data.timings;
       
-      if (hours > 12) {
-        hours -= 12;
-      } else if (hours === 0) {
-        hours = 12;
-      }
+      const convertTo12Hour = (time24: string): string => {
+        const [hours24, minutes] = time24.split(':');
+        let hours = parseInt(hours24);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        
+        if (hours > 12) {
+          hours -= 12;
+        } else if (hours === 0) {
+          hours = 12;
+        }
 
-      const maghribTime12 = `${hours}:${minutes} ${period}`;
+        return `${hours}:${minutes} ${period}`;
+      };
 
-      // Update Firebase with new Maghrib time
-      const prayerTimesRef = doc(db, 'prayerTimes', 'current');
-      
       // Get current prayer times from Firebase
+      const prayerTimesRef = doc(db, 'prayerTimes', 'current');
       const prayerTimesSnap = await getDoc(prayerTimesRef);
       const currentPrayerTimes = prayerTimesSnap.data() as PrayerTimes;
 
-      // Update only Maghrib adhan and last_updated
+      // Update ALL Adhan times, keep existing Iqama settings
       const updatedPrayerTimes: PrayerTimes = {
         ...currentPrayerTimes,
-        maghrib_adhan: maghribTime12,
+        fajr_adhan: convertTo12Hour(timings.Fajr),
+        dhuhr_adhan: convertTo12Hour(timings.Dhuhr),
+        asr_adhan: convertTo12Hour(timings.Asr),
+        maghrib_adhan: convertTo12Hour(timings.Maghrib),
+        isha_adhan: convertTo12Hour(timings.Isha),
         last_updated: today
       };
 
       await setDoc(prayerTimesRef, updatedPrayerTimes);
 
-      console.log(`✅ Maghrib auto-updated to ${maghribTime12}`);
+      console.log(`✅ All prayer times auto-updated:
+        Fajr: ${convertTo12Hour(timings.Fajr)}
+        Dhuhr: ${convertTo12Hour(timings.Dhuhr)}
+        Asr: ${convertTo12Hour(timings.Asr)}
+        Maghrib: ${convertTo12Hour(timings.Maghrib)}
+        Isha: ${convertTo12Hour(timings.Isha)}
+      `);
     } catch (error) {
-      console.error('❌ Error auto-fetching Maghrib:', error);
+      console.error('❌ Error auto-fetching prayer times:', error);
     } finally {
       setIsFetching(false);
     }
