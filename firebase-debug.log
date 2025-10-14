@@ -1,0 +1,38 @@
+[debug] [2025-10-14T18:51:24.595Z] ----------------------------------------------------------------------
+[debug] [2025-10-14T18:51:24.597Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\eterb\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init functions
+[debug] [2025-10-14T18:51:24.597Z] CLI Version:   14.19.1
+[debug] [2025-10-14T18:51:24.597Z] Platform:      win32
+[debug] [2025-10-14T18:51:24.598Z] Node Version:  v22.20.0
+[debug] [2025-10-14T18:51:24.598Z] Time:          Wed Oct 15 2025 05:51:24 GMT+1100 (Australian Eastern Daylight Time)
+[debug] [2025-10-14T18:51:24.598Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\DEV\MosqueApp\al-madina-masjid-app
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2025-10-14T18:55:46.274Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\eterb\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:519:28)
+    at Interface.emit (node:domain:489:12)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1128:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:271:20)
+    at ReadStream.emit (node:events:531:35)
+    at ReadStream.emit (node:domain:489:12)
+    at emitKeys (node:internal/readline/utils:370:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+[error] 
+[error] Error: An unexpected error has occurred.

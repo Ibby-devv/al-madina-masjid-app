@@ -8,7 +8,7 @@ import LoadingScreen from '../../components/LoadingScreen';
 
 // Import custom hooks
 import { useFirebaseData } from '../../hooks/useFirebaseData';
-import { useAutoFetchPrayerTimes } from '../../hooks/useAutoFetchPrayerTimes';
+
 
 // Import types and utility
 import { Prayer, calculateIqamaTime } from '../../types';
@@ -22,8 +22,7 @@ export default function HomeScreen(): React.JSX.Element {
   // Load data from Firebase using custom hooks
   const { prayerTimes, jumuahTimes, mosqueSettings, loading } = useFirebaseData();
   
-  // Auto-fetch Prayer Times if enabled
-  const { isFetching: fetchingPrayerTimes } = useAutoFetchPrayerTimes(prayerTimes, mosqueSettings);
+  
 
   // Update current time every minute
   useEffect(() => {
@@ -164,7 +163,7 @@ export default function HomeScreen(): React.JSX.Element {
     return <LoadingScreen />;
   }
 
-  const showPrayerTimesFetchIndicator = fetchingPrayerTimes && mosqueSettings?.auto_fetch_prayer_times;
+ // const showPrayerTimesFetchIndicator = false;
 
   // Prayer times array
   const prayers: Array<Prayer & { icon: string; showIqama: boolean }> = [
@@ -189,16 +188,6 @@ export default function HomeScreen(): React.JSX.Element {
             {formatDate(currentTime)} | {getIslamicDate(currentTime)}
           </Text>
         </View>
-
-        {/* Prayer Times Fetch Indicator */}
-        {showPrayerTimesFetchIndicator && (
-          <View style={styles.fetchIndicator}>
-            <Text style={styles.fetchIndicatorText}>
-              🕌 Updating prayer times...
-            </Text>
-          </View>
-        )}
-
         {/* Toggle Buttons */}
         <View style={styles.toggleContainer}>
           <TouchableOpacity 
