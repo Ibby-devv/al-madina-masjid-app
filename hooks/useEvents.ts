@@ -22,11 +22,28 @@ export const useEvents = (): UseEventsReturn => {
     try {
       setError(null);
 
-      // Real-time listener for active events, ordered by date
+      // Get today's date in YYYY-MM-DD format (Sydney timezone)
+      const getSydneyDate = (): string => {
+        const sydneyDate = new Date().toLocaleString('en-AU', {
+          timeZone: 'Australia/Sydney',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        // Convert DD/MM/YYYY to YYYY-MM-DD
+        const [day, month, year] = sydneyDate.split('/');
+        return `${year}-${month}-${day}`;
+      };
+
+      const today = getSydneyDate();
+      console.log('Fetching events from date:', today);
+
+      // Real-time listener for upcoming active events only
       const eventsRef = collection(db, 'events');
       const q = query(
         eventsRef,
         where('is_active', '==', true),
+        where('date', '>=', today),  // ← NEW: Only fetch upcoming events
         orderBy('date', 'asc')
       );
 
@@ -40,7 +57,7 @@ export const useEvents = (): UseEventsReturn => {
           
           setEvents(loadedEvents);
           setLoading(false);
-          console.log('Events updated from Firebase:', loadedEvents.length);
+          console.log('Upcoming events loaded:', loadedEvents.length);
         },
         (err) => {
           console.error('Error listening to events:', err);
@@ -63,13 +80,11 @@ export const useEvents = (): UseEventsReturn => {
     };
   }, []);
 
-  // Separate events into upcoming and past
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayString = today.toISOString().split('T')[0];
-
-  const upcomingEvents = events.filter(event => event.date >= todayString);
-  const pastEvents = events.filter(event => event.date < todayString);
+  // Since we're only fetching upcoming events, upcomingEvents = events
+  const upcomingEvents = events;
+  
+  // pastEvents will always be empty now (we don't fetch them)
+  const pastEvents: Event[] = [];
 
   return {
     events,
