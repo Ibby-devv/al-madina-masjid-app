@@ -1,5 +1,5 @@
 // ============================================================================
-// DONATION SCREEN - COMPLETE
+// DONATION SCREEN - SIMPLIFIED WITH PAYMENT SHEET
 // Location: src/screens/donate.tsx
 // ============================================================================
 
@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useStripe, CardField } from '@stripe/stripe-react-native';
+import { useStripe } from '@stripe/stripe-react-native';
+import { Picker } from '@react-native-picker/picker';
 
 // Import custom hooks
 import { useFirebaseData } from '../../hooks/useFirebaseData';
@@ -29,7 +30,7 @@ import { DonationFormData } from '../../types/donation';
 export default function DonateScreen(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
   const { settings, loading, error, createDonation, createSubscription } = useDonation();
-  const { confirmPayment } = useStripe();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   // Form state
   const [selectedType, setSelectedType] = useState<string>('');
@@ -40,13 +41,11 @@ export default function DonateScreen(): React.JSX.Element {
   const [frequency, setFrequency] = useState<'weekly' | 'fortnightly' | 'monthly' | 'yearly'>('monthly');
   
   // Donor info
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
-  const [donorPhone, setDonorPhone] = useState('');
-  const [donorMessage, setDonorMessage] = useState('');
 
-  // Card state
-  const [cardComplete, setCardComplete] = useState(false);
+  // Processing state
   const [processing, setProcessing] = useState(false);
 
   // Initialize selected type
@@ -90,18 +89,8 @@ export default function DonateScreen(): React.JSX.Element {
       return false;
     }
 
-    if (!donorName.trim()) {
-      Alert.alert('Error', 'Please enter your name');
-      return false;
-    }
-
-    if (!donorEmail.trim() || !donorEmail.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email');
-      return false;
-    }
-
-    if (!cardComplete) {
-      Alert.alert('Error', 'Please enter valid card details');
+    if (!isAnonymous && !donorName.trim()) {
+      Alert.alert('Error', 'Please enter your name or select Anonymous');
       return false;
     }
 
@@ -120,10 +109,10 @@ export default function DonateScreen(): React.JSX.Element {
         donationTypeLabel: selectedTypeLabel,
         isRecurring,
         frequency: isRecurring ? frequency : undefined,
-        donorName: donorName.trim(),
-        donorEmail: donorEmail.trim(),
-        donorPhone: donorPhone.trim(),
-        donorMessage: donorMessage.trim() || undefined,
+        donorName: isAnonymous ? 'Anonymous' : donorName.trim(),
+        donorEmail: donorEmail.trim() || 'anonymous@donation.com',
+        donorPhone: '',
+        donorMessage: undefined,
       };
 
       // Create payment intent or subscription
@@ -131,13 +120,39 @@ export default function DonateScreen(): React.JSX.Element {
         ? await createSubscription(donationData)
         : await createDonation(donationData);
 
-      // Confirm payment with Stripe
-      const { error: paymentError, paymentIntent } = await confirmPayment(result.clientSecret, {
-        paymentMethodType: 'Card',
+      // Initialize Payment Sheet
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: result.clientSecret,
+        merchantDisplayName: mosqueSettings?.name || 'Al Madina Masjid',
+        applePay: {
+          merchantCountryCode: 'AU',
+        },
+        googlePay: {
+          merchantCountryCode: 'AU',
+          testEnv: true, // Set to false in production
+          currencyCode: 'AUD',
+        },
+        defaultBillingDetails: {
+          name: isAnonymous ? 'Anonymous' : donorName.trim(),
+          email: donorEmail.trim() || undefined,
+        },
+        returnURL: 'almadina://payment-complete',
       });
 
-      if (paymentError) {
-        throw new Error(paymentError.message);
+      if (initError) {
+        throw new Error(initError.message);
+      }
+
+      // Present Payment Sheet
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        // User cancelled or error occurred
+        if (presentError.code !== 'Canceled') {
+          throw new Error(presentError.message);
+        }
+        setProcessing(false);
+        return;
       }
 
       // Success!
@@ -155,8 +170,7 @@ export default function DonateScreen(): React.JSX.Element {
               setCustomAmount('');
               setDonorName('');
               setDonorEmail('');
-              setDonorPhone('');
-              setDonorMessage('');
+              setIsAnonymous(false);
               setIsRecurring(false);
             },
           },
@@ -195,56 +209,44 @@ export default function DonateScreen(): React.JSX.Element {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>
+            <Ionicons name="heart" size={40} color="#fff" />
+            <Text style={styles.headerTitle}>Make a Donation</Text>
+            <Text style={styles.headerSubtitle}>
               {mosqueSettings?.name || 'Al Madina Masjid Yagoona'}
             </Text>
-            <Text style={styles.headerSubtitle}>Support Your Masjid</Text>
           </View>
 
           {/* Content */}
           <View style={styles.contentContainer}>
-            {/* Donation Type Selection */}
+            {/* Donation Type Dropdown */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Donation Type</Text>
-              {settings.donation_types
-                .filter(type => type.enabled)
-                .map(type => (
-                  <TouchableOpacity
-                    key={type.id}
-                    style={[
-                      styles.typeCard,
-                      selectedType === type.id && styles.typeCardSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedType(type.id);
-                      setSelectedTypeLabel(type.label);
-                    }}
-                  >
-                    <View style={styles.typeCardContent}>
-                      <View style={styles.typeCardLeft}>
-                        <Ionicons
-                          name={selectedType === type.id ? 'radio-button-on' : 'radio-button-off'}
-                          size={24}
-                          color={selectedType === type.id ? '#1e3a8a' : '#9ca3af'}
-                        />
-                        <View style={styles.typeTextContainer}>
-                          <Text style={[
-                            styles.typeLabel,
-                            selectedType === type.id && styles.typeLabelSelected,
-                          ]}>
-                            {type.label}
-                          </Text>
-                          <Text style={styles.typeDescription}>{type.description}</Text>
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+              <Text style={styles.label}>Donation Type *</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedType}
+                  onValueChange={(value, index) => {
+                    setSelectedType(value);
+                    const type = settings.donation_types.find(t => t.id === value);
+                    if (type) setSelectedTypeLabel(type.label);
+                  }}
+                  style={styles.picker}
+                >
+                  {settings.donation_types
+                    .filter(type => type.enabled)
+                    .map(type => (
+                      <Picker.Item
+                        key={type.id}
+                        label={type.label}
+                        value={type.id}
+                      />
+                    ))}
+                </Picker>
+              </View>
             </View>
 
             {/* Amount Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Amount (AUD)</Text>
+              <Text style={styles.label}>Amount (AUD) *</Text>
               <View style={styles.amountGrid}>
                 {settings.preset_amounts.map(presetAmount => (
                   <TouchableOpacity
@@ -268,7 +270,7 @@ export default function DonateScreen(): React.JSX.Element {
               </View>
 
               <TextInput
-                style={styles.customAmountInput}
+                style={styles.input}
                 placeholder="Or enter custom amount"
                 placeholderTextColor="#9ca3af"
                 keyboardType="numeric"
@@ -278,112 +280,116 @@ export default function DonateScreen(): React.JSX.Element {
             </View>
 
             {/* Recurring Toggle */}
+            <TouchableOpacity
+              style={styles.checkboxRow}
+              onPress={() => setIsRecurring(!isRecurring)}
+            >
+              <Ionicons
+                name={isRecurring ? 'checkbox' : 'square-outline'}
+                size={24}
+                color="#1e3a8a"
+              />
+              <Text style={styles.checkboxLabel}>Make this recurring</Text>
+            </TouchableOpacity>
+
+            {isRecurring && (
+              <View style={styles.frequencyRow}>
+                {settings.recurring_frequencies
+                  .filter(freq => freq.enabled)
+                  .map(freq => (
+                    <TouchableOpacity
+                      key={freq.id}
+                      style={[
+                        styles.frequencyChip,
+                        frequency === freq.id && styles.frequencyChipSelected,
+                      ]}
+                      onPress={() => setFrequency(freq.id as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.frequencyChipText,
+                          frequency === freq.id && styles.frequencyChipTextSelected,
+                        ]}
+                      >
+                        {freq.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+              </View>
+            )}
+
+            {/* Anonymous Toggle */}
             <View style={styles.section}>
               <TouchableOpacity
-                style={styles.recurringToggle}
-                onPress={() => setIsRecurring(!isRecurring)}
+                style={styles.checkboxRow}
+                onPress={() => setIsAnonymous(!isAnonymous)}
               >
-                <View style={styles.recurringToggleLeft}>
-                  <Ionicons
-                    name={isRecurring ? 'checkbox' : 'square-outline'}
-                    size={24}
-                    color="#1e3a8a"
-                  />
-                  <Text style={styles.recurringLabel}>Make this a recurring donation</Text>
-                </View>
+                <Ionicons
+                  name={isAnonymous ? 'checkbox' : 'square-outline'}
+                  size={24}
+                  color="#1e3a8a"
+                />
+                <Text style={styles.checkboxLabel}>Donate anonymously</Text>
               </TouchableOpacity>
-
-              {isRecurring && (
-                <View style={styles.frequencyContainer}>
-                  {settings.recurring_frequencies
-                    .filter(freq => freq.enabled)
-                    .map(freq => (
-                      <TouchableOpacity
-                        key={freq.id}
-                        style={[
-                          styles.frequencyButton,
-                          frequency === freq.id && styles.frequencyButtonSelected,
-                        ]}
-                        onPress={() => setFrequency(freq.id as any)}
-                      >
-                        <Text
-                          style={[
-                            styles.frequencyButtonText,
-                            frequency === freq.id && styles.frequencyButtonTextSelected,
-                          ]}
-                        >
-                          {freq.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                </View>
-              )}
             </View>
 
             {/* Donor Information */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Your Information</Text>
-              
-              <TextInput
-                style={styles.input}
-                placeholder="Full Name *"
-                placeholderTextColor="#9ca3af"
-                value={donorName}
-                onChangeText={setDonorName}
-                autoCapitalize="words"
-              />
+            {!isAnonymous && (
+              <View style={styles.section}>
+                <Text style={styles.label}>Your Information</Text>
+                
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full Name *"
+                  placeholderTextColor="#9ca3af"
+                  value={donorName}
+                  onChangeText={setDonorName}
+                  autoCapitalize="words"
+                />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Email *"
-                placeholderTextColor="#9ca3af"
-                value={donorEmail}
-                onChangeText={setDonorEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email (optional)"
+                  placeholderTextColor="#9ca3af"
+                  value={donorEmail}
+                  onChangeText={setDonorEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+            )}
 
-              <TextInput
-                style={styles.input}
-                placeholder="Phone (optional)"
-                placeholderTextColor="#9ca3af"
-                value={donorPhone}
-                onChangeText={setDonorPhone}
-                keyboardType="phone-pad"
-              />
-
-              <TextInput
-                style={[styles.input, styles.messageInput]}
-                placeholder="Message (optional)"
-                placeholderTextColor="#9ca3af"
-                value={donorMessage}
-                onChangeText={setDonorMessage}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-
-            {/* Payment Information */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Payment Details</Text>
-              <CardField
-                postalCodeEnabled={false}
-                cardStyle={styles.cardFieldCard}
-                style={styles.cardField}
-                onCardChange={(cardDetails) => {
-                  setCardComplete(cardDetails.complete);
-                }}
-              />
+            {/* Payment Methods Info */}
+            <View style={styles.paymentMethodsInfo}>
+              <Text style={styles.paymentMethodsTitle}>We accept:</Text>
+              <View style={styles.paymentMethodsIcons}>
+                {Platform.OS === 'ios' && (
+                  <View style={styles.paymentMethodBadge}>
+                    <Ionicons name="logo-apple" size={20} color="#000" />
+                    <Text style={styles.paymentMethodText}>Apple Pay</Text>
+                  </View>
+                )}
+                {Platform.OS === 'android' && (
+                  <View style={styles.paymentMethodBadge}>
+                    <Ionicons name="logo-google" size={20} color="#4285F4" />
+                    <Text style={styles.paymentMethodText}>Google Pay</Text>
+                  </View>
+                )}
+                <View style={styles.paymentMethodBadge}>
+                  <Ionicons name="card" size={20} color="#1e3a8a" />
+                  <Text style={styles.paymentMethodText}>Card</Text>
+                </View>
+              </View>
             </View>
 
             {/* Donate Button */}
             <TouchableOpacity
               style={[
                 styles.donateButton,
-                (processing || !cardComplete) && styles.donateButtonDisabled,
+                processing && styles.donateButtonDisabled,
               ]}
               onPress={handleDonate}
-              disabled={processing || !cardComplete}
+              disabled={processing}
             >
               {processing ? (
                 <ActivityIndicator color="#fff" />
@@ -438,13 +444,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e3a8a',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 15,
+    paddingBottom: 30,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#fff',
+    marginTop: 12,
     marginBottom: 5,
   },
   headerSubtitle: {
@@ -455,54 +462,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -20,
   },
   section: {
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
-    marginBottom: 12,
-  },
-  typeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  typeCardSelected: {
-    borderColor: '#1e3a8a',
-    backgroundColor: '#eff6ff',
-  },
-  typeCardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  typeCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  typeTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  typeLabel: {
+  label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1f2937',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  typeLabelSelected: {
-    color: '#1e3a8a',
+  pickerContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    overflow: 'hidden',
   },
-  typeDescription: {
-    fontSize: 14,
-    color: '#6b7280',
+  picker: {
+    height: 50,
   },
   amountGrid: {
     flexDirection: 'row',
@@ -532,61 +513,6 @@ const styles = StyleSheet.create({
   amountButtonTextSelected: {
     color: '#fff',
   },
-  customAmountInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1f2937',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  recurringToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  recurringToggleLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  recurringLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginLeft: 12,
-  },
-  frequencyContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  frequencyButton: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-  },
-  frequencyButtonSelected: {
-    borderColor: '#1e3a8a',
-    backgroundColor: '#eff6ff',
-  },
-  frequencyButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  frequencyButtonTextSelected: {
-    color: '#1e3a8a',
-  },
   input: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -597,20 +523,74 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#e5e7eb',
   },
-  messageInput: {
-    height: 100,
-    textAlignVertical: 'top',
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  cardField: {
-    height: 50,
+  checkboxLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1f2937',
+    marginLeft: 12,
   },
-  cardFieldCard: {
-  backgroundColor: '#FFFFFF',
-  textColor: '#000000',
-  borderWidth: 2,
-  borderColor: '#e5e7eb',
-  borderRadius: 12,
-},
+  frequencyRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+    paddingLeft: 36,
+  },
+  frequencyChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+  },
+  frequencyChipSelected: {
+    backgroundColor: '#eff6ff',
+    borderColor: '#1e3a8a',
+  },
+  frequencyChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  frequencyChipTextSelected: {
+    color: '#1e3a8a',
+  },
+  paymentMethodsInfo: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  paymentMethodsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 12,
+  },
+  paymentMethodsIcons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  paymentMethodBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+  },
+  paymentMethodText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
   donateButton: {
     backgroundColor: '#1e3a8a',
     borderRadius: 12,
@@ -619,10 +599,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    marginTop: 8,
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   donateButtonDisabled: {
     backgroundColor: '#9ca3af',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   donateButtonText: {
     color: '#fff',
