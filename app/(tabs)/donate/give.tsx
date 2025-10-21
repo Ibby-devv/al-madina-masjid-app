@@ -1,6 +1,5 @@
 // ============================================================================
 // DONATION SCREEN - SIMPLIFIED WITH PAYMENT SHEET
-// Location: src/screens/donate.tsx
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
@@ -23,12 +22,12 @@ import { useStripe } from "@stripe/stripe-react-native";
 import { Picker } from "@react-native-picker/picker";
 
 // Import custom hooks
-import { useFirebaseData } from "../../hooks/useFirebaseData";
-import { useDonation } from "../../hooks/useDonation";
-import { DonationFormData } from "../../types/donation";
+import { useFirebaseData } from "../../../hooks/useFirebaseData";
+import { useDonation } from "../../../hooks/useDonation";
+import { DonationFormData } from "../../../types/donation";
 import { router } from "expo-router";
 
-export default function DonateScreen(): React.JSX.Element {
+export default function GiveTab(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
   const { settings, loading, error, createDonation, createSubscription } =
     useDonation();
@@ -208,8 +207,8 @@ export default function DonateScreen(): React.JSX.Element {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+  <StatusBar barStyle="dark-content" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -220,15 +219,6 @@ export default function DonateScreen(): React.JSX.Element {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Ionicons name="heart" size={40} color="#fff" />
-            <Text style={styles.headerTitle}>Make a Donation</Text>
-            <Text style={styles.headerSubtitle}>
-              {mosqueSettings?.name || "Al Madina Masjid Yagoona"}
-            </Text>
-          </View>
-
           {/* Content */}
           <View style={styles.contentContainer}>
             {/* Donation Type Dropdown */}
@@ -463,21 +453,6 @@ export default function DonateScreen(): React.JSX.Element {
                 Secure payment powered by Stripe
               </Text>
             </View>
-            <View style={styles.manageSection}>
-              <View style={styles.manageDivider} />
-              <Text style={styles.manageText}>
-                Already have a recurring donation?
-              </Text>
-              <TouchableOpacity
-                style={styles.manageButton}
-                onPress={() => router.push("/manage-donations")}
-              >
-                <Ionicons name="settings-outline" size={20} color="#1e3a8a" />
-                <Text style={styles.manageButtonText}>
-                  Manage Subscriptions
-                </Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -487,9 +462,9 @@ export default function DonateScreen(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#1e3a8a",
-  },
+  flex: 1,
+  backgroundColor: '#f5f5f5',
+},
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -506,34 +481,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingTop: 24,
     paddingBottom: 40,
   },
-  header: {
-    backgroundColor: "#1e3a8a",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#fff",
-    marginTop: 12,
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: "#93c5fd",
-  },
   contentContainer: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 20,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    marginTop: -20,
-  },
+  flex: 1,
+  backgroundColor: '#f5f5f5',
+  padding: 20,
+  borderTopLeftRadius: 30,
+  borderTopRightRadius: 30,
+  marginTop: -20,
+},
   section: {
     marginBottom: 24,
   },
