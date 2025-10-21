@@ -1,9 +1,9 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFunctions, Functions } from 'firebase/functions';
 
 // Firebase configuration
-// TODO: Replace with your actual Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCFcrgT_hwmTSZqbh1b1AUuEZHmK_j_41k",
   authDomain: "al-madina-masjid-app.firebaseapp.com",
@@ -18,4 +18,11 @@ const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
-export { auth, db };
+// Initialize Functions for Australia region
+const functions: Functions = getFunctions(app, 'australia-southeast1');
+
+// Uncomment this line if you're using Firebase emulator for local development
+// import { connectFunctionsEmulator } from 'firebase/functions';
+// connectFunctionsEmulator(functions, 'localhost', 5001);
+
+export { app, auth, db, functions };
