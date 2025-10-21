@@ -3,7 +3,7 @@
 // Location: src/screens/donate.tsx
 // ============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,34 +16,38 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useStripe } from '@stripe/stripe-react-native';
-import { Picker } from '@react-native-picker/picker';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useStripe } from "@stripe/stripe-react-native";
+import { Picker } from "@react-native-picker/picker";
 
 // Import custom hooks
-import { useFirebaseData } from '../../hooks/useFirebaseData';
-import { useDonation } from '../../hooks/useDonation';
-import { DonationFormData } from '../../types/donation';
+import { useFirebaseData } from "../../hooks/useFirebaseData";
+import { useDonation } from "../../hooks/useDonation";
+import { DonationFormData } from "../../types/donation";
+import { router } from "expo-router";
 
 export default function DonateScreen(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
-  const { settings, loading, error, createDonation, createSubscription } = useDonation();
+  const { settings, loading, error, createDonation, createSubscription } =
+    useDonation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   // Form state
-  const [selectedType, setSelectedType] = useState<string>('');
-  const [selectedTypeLabel, setSelectedTypeLabel] = useState<string>('');
-  const [amount, setAmount] = useState<string>('');
-  const [customAmount, setCustomAmount] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [selectedTypeLabel, setSelectedTypeLabel] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [customAmount, setCustomAmount] = useState<string>("");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [frequency, setFrequency] = useState<'weekly' | 'fortnightly' | 'monthly' | 'yearly'>('monthly');
-  
+  const [frequency, setFrequency] = useState<
+    "weekly" | "fortnightly" | "monthly" | "yearly"
+  >("monthly");
+
   // Donor info
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [donorName, setDonorName] = useState('');
-  const [donorEmail, setDonorEmail] = useState('');
+  const [donorName, setDonorName] = useState("");
+  const [donorEmail, setDonorEmail] = useState("");
 
   // Processing state
   const [processing, setProcessing] = useState(false);
@@ -51,7 +55,7 @@ export default function DonateScreen(): React.JSX.Element {
   // Initialize selected type
   useEffect(() => {
     if (settings && settings.donation_types.length > 0) {
-      const firstEnabled = settings.donation_types.find(t => t.enabled);
+      const firstEnabled = settings.donation_types.find((t) => t.enabled);
       if (firstEnabled) {
         setSelectedType(firstEnabled.id);
         setSelectedTypeLabel(firstEnabled.label);
@@ -61,12 +65,12 @@ export default function DonateScreen(): React.JSX.Element {
 
   const handlePresetAmount = (value: number) => {
     setAmount(value.toString());
-    setCustomAmount('');
+    setCustomAmount("");
   };
 
   const handleCustomAmount = (text: string) => {
     setCustomAmount(text);
-    setAmount('');
+    setAmount("");
   };
 
   const getDisplayAmount = (): number => {
@@ -80,17 +84,26 @@ export default function DonateScreen(): React.JSX.Element {
     const minAmount = settings?.minimum_amount || 5;
 
     if (!selectedType) {
-      Alert.alert('Error', 'Please select a donation type');
+      Alert.alert("Error", "Please select a donation type");
       return false;
     }
 
     if (displayAmount < minAmount) {
-      Alert.alert('Error', `Minimum donation is $${minAmount}`);
+      Alert.alert("Error", `Minimum donation is $${minAmount}`);
       return false;
     }
 
     if (!isAnonymous && !donorName.trim()) {
-      Alert.alert('Error', 'Please enter your name or select Anonymous');
+      Alert.alert("Error", "Please enter your name or select Anonymous");
+      return false;
+    }
+
+    // Email required for recurring donations
+    if (isRecurring && (!donorEmail.trim() || !donorEmail.includes("@"))) {
+      Alert.alert(
+        "Email Required",
+        "A valid email address is required for recurring donations so you can manage your subscription."
+      );
       return false;
     }
 
@@ -109,9 +122,9 @@ export default function DonateScreen(): React.JSX.Element {
         donationTypeLabel: selectedTypeLabel,
         isRecurring,
         frequency: isRecurring ? frequency : undefined,
-        donorName: isAnonymous ? 'Anonymous' : donorName.trim(),
-        donorEmail: donorEmail.trim() || 'anonymous@donation.com',
-        donorPhone: '',
+        donorName: isAnonymous ? "Anonymous" : donorName.trim(),
+        donorEmail: donorEmail.trim() || "anonymous@donation.com",
+        donorPhone: "",
         donorMessage: undefined,
       };
 
@@ -123,20 +136,20 @@ export default function DonateScreen(): React.JSX.Element {
       // Initialize Payment Sheet
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: result.clientSecret,
-        merchantDisplayName: mosqueSettings?.name || 'Al Madina Masjid',
+        merchantDisplayName: mosqueSettings?.name || "Al Madina Masjid",
         applePay: {
-          merchantCountryCode: 'AU',
+          merchantCountryCode: "AU",
         },
         googlePay: {
-          merchantCountryCode: 'AU',
+          merchantCountryCode: "AU",
           testEnv: true, // Set to false in production
-          currencyCode: 'AUD',
+          currencyCode: "AUD",
         },
         defaultBillingDetails: {
-          name: isAnonymous ? 'Anonymous' : donorName.trim(),
+          name: isAnonymous ? "Anonymous" : donorName.trim(),
           email: donorEmail.trim() || undefined,
         },
-        returnURL: 'almadina://payment-complete',
+        returnURL: "almadina://payment-complete",
       });
 
       if (initError) {
@@ -148,7 +161,7 @@ export default function DonateScreen(): React.JSX.Element {
 
       if (presentError) {
         // User cancelled or error occurred
-        if (presentError.code !== 'Canceled') {
+        if (presentError.code !== "Canceled") {
           throw new Error(presentError.message);
         }
         setProcessing(false);
@@ -157,19 +170,19 @@ export default function DonateScreen(): React.JSX.Element {
 
       // Success!
       Alert.alert(
-        'Success! 🎉',
+        "Success! 🎉",
         isRecurring
           ? `Thank you for setting up a ${frequency} donation of $${getDisplayAmount()}!`
           : `Thank you for your donation of $${getDisplayAmount()}!`,
         [
           {
-            text: 'Done',
+            text: "Done",
             onPress: () => {
               // Reset form
-              setAmount('');
-              setCustomAmount('');
-              setDonorName('');
-              setDonorEmail('');
+              setAmount("");
+              setCustomAmount("");
+              setDonorName("");
+              setDonorEmail("");
               setIsAnonymous(false);
               setIsRecurring(false);
             },
@@ -177,7 +190,7 @@ export default function DonateScreen(): React.JSX.Element {
         ]
       );
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Payment failed. Please try again.');
+      Alert.alert("Error", err.message || "Payment failed. Please try again.");
     } finally {
       setProcessing(false);
     }
@@ -197,9 +210,9 @@ export default function DonateScreen(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -212,7 +225,7 @@ export default function DonateScreen(): React.JSX.Element {
             <Ionicons name="heart" size={40} color="#fff" />
             <Text style={styles.headerTitle}>Make a Donation</Text>
             <Text style={styles.headerSubtitle}>
-              {mosqueSettings?.name || 'Al Madina Masjid Yagoona'}
+              {mosqueSettings?.name || "Al Madina Masjid Yagoona"}
             </Text>
           </View>
 
@@ -226,14 +239,16 @@ export default function DonateScreen(): React.JSX.Element {
                   selectedValue={selectedType}
                   onValueChange={(value, index) => {
                     setSelectedType(value);
-                    const type = settings.donation_types.find(t => t.id === value);
+                    const type = settings.donation_types.find(
+                      (t) => t.id === value
+                    );
                     if (type) setSelectedTypeLabel(type.label);
                   }}
                   style={styles.picker}
                 >
                   {settings.donation_types
-                    .filter(type => type.enabled)
-                    .map(type => (
+                    .filter((type) => type.enabled)
+                    .map((type) => (
                       <Picker.Item
                         key={type.id}
                         label={type.label}
@@ -248,19 +263,21 @@ export default function DonateScreen(): React.JSX.Element {
             <View style={styles.section}>
               <Text style={styles.label}>Amount (AUD) *</Text>
               <View style={styles.amountGrid}>
-                {settings.preset_amounts.map(presetAmount => (
+                {settings.preset_amounts.map((presetAmount) => (
                   <TouchableOpacity
                     key={presetAmount}
                     style={[
                       styles.amountButton,
-                      amount === presetAmount.toString() && styles.amountButtonSelected,
+                      amount === presetAmount.toString() &&
+                        styles.amountButtonSelected,
                     ]}
                     onPress={() => handlePresetAmount(presetAmount)}
                   >
                     <Text
                       style={[
                         styles.amountButtonText,
-                        amount === presetAmount.toString() && styles.amountButtonTextSelected,
+                        amount === presetAmount.toString() &&
+                          styles.amountButtonTextSelected,
                       ]}
                     >
                       ${presetAmount}
@@ -282,10 +299,16 @@ export default function DonateScreen(): React.JSX.Element {
             {/* Recurring Toggle */}
             <TouchableOpacity
               style={styles.checkboxRow}
-              onPress={() => setIsRecurring(!isRecurring)}
+              onPress={() => {
+                const newValue = !isRecurring;
+                setIsRecurring(newValue);
+                if (newValue && isAnonymous) {
+                  setIsAnonymous(false); // Auto-uncheck anonymous
+                }
+              }}
             >
               <Ionicons
-                name={isRecurring ? 'checkbox' : 'square-outline'}
+                name={isRecurring ? "checkbox" : "square-outline"}
                 size={24}
                 color="#1e3a8a"
               />
@@ -295,8 +318,8 @@ export default function DonateScreen(): React.JSX.Element {
             {isRecurring && (
               <View style={styles.frequencyRow}>
                 {settings.recurring_frequencies
-                  .filter(freq => freq.enabled)
-                  .map(freq => (
+                  .filter((freq) => freq.enabled)
+                  .map((freq) => (
                     <TouchableOpacity
                       key={freq.id}
                       style={[
@@ -308,7 +331,8 @@ export default function DonateScreen(): React.JSX.Element {
                       <Text
                         style={[
                           styles.frequencyChipText,
-                          frequency === freq.id && styles.frequencyChipTextSelected,
+                          frequency === freq.id &&
+                            styles.frequencyChipTextSelected,
                         ]}
                       >
                         {freq.label}
@@ -321,23 +345,39 @@ export default function DonateScreen(): React.JSX.Element {
             {/* Anonymous Toggle */}
             <View style={styles.section}>
               <TouchableOpacity
-                style={styles.checkboxRow}
-                onPress={() => setIsAnonymous(!isAnonymous)}
+                style={[
+                  styles.checkboxRow,
+                  isRecurring && styles.checkboxRowDisabled,
+                ]}
+                onPress={() => {
+                  if (!isRecurring) {
+                    setIsAnonymous(!isAnonymous);
+                  }
+                }}
+                disabled={isRecurring}
               >
                 <Ionicons
-                  name={isAnonymous ? 'checkbox' : 'square-outline'}
+                  name={isAnonymous ? "checkbox" : "square-outline"}
                   size={24}
                   color="#1e3a8a"
                 />
-                <Text style={styles.checkboxLabel}>Donate anonymously</Text>
+                <Text
+                  style={[
+                    styles.checkboxLabel,
+                    isRecurring && styles.checkboxLabelDisabled,
+                  ]}
+                >
+                  Donate anonymously
+                  {isRecurring && " (Not available for recurring)"}
+                </Text>
               </TouchableOpacity>
             </View>
 
             {/* Donor Information */}
-            {!isAnonymous && (
+            {(!isAnonymous || isRecurring) && (
               <View style={styles.section}>
                 <Text style={styles.label}>Your Information</Text>
-                
+
                 <TextInput
                   style={styles.input}
                   placeholder="Full Name *"
@@ -349,13 +389,26 @@ export default function DonateScreen(): React.JSX.Element {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Email (optional)"
+                  placeholder={isRecurring ? "Email *" : "Email (optional)"}
                   placeholderTextColor="#9ca3af"
                   value={donorEmail}
                   onChangeText={setDonorEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
+
+                {isRecurring && (
+                  <View style={styles.infoBox}>
+                    <Ionicons
+                      name="information-circle"
+                      size={20}
+                      color="#1e3a8a"
+                    />
+                    <Text style={styles.infoText}>
+                      Email required to manage your recurring donation
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
 
@@ -363,13 +416,13 @@ export default function DonateScreen(): React.JSX.Element {
             <View style={styles.paymentMethodsInfo}>
               <Text style={styles.paymentMethodsTitle}>We accept:</Text>
               <View style={styles.paymentMethodsIcons}>
-                {Platform.OS === 'ios' && (
+                {Platform.OS === "ios" && (
                   <View style={styles.paymentMethodBadge}>
                     <Ionicons name="logo-apple" size={20} color="#000" />
                     <Text style={styles.paymentMethodText}>Apple Pay</Text>
                   </View>
                 )}
-                {Platform.OS === 'android' && (
+                {Platform.OS === "android" && (
                   <View style={styles.paymentMethodBadge}>
                     <Ionicons name="logo-google" size={20} color="#4285F4" />
                     <Text style={styles.paymentMethodText}>Google Pay</Text>
@@ -410,6 +463,21 @@ export default function DonateScreen(): React.JSX.Element {
                 Secure payment powered by Stripe
               </Text>
             </View>
+            <View style={styles.manageSection}>
+              <View style={styles.manageDivider} />
+              <Text style={styles.manageText}>
+                Already have a recurring donation?
+              </Text>
+              <TouchableOpacity
+                style={styles.manageButton}
+                onPress={() => router.push("/manage-donations")}
+              >
+                <Ionicons name="settings-outline" size={20} color="#1e3a8a" />
+                <Text style={styles.manageButtonText}>
+                  Manage Subscriptions
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -420,18 +488,18 @@ export default function DonateScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e3a8a',
+    backgroundColor: "#1e3a8a",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6b7280',
+    color: "#6b7280",
   },
   scrollView: {
     flex: 1,
@@ -441,26 +509,26 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: "#1e3a8a",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 30,
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginTop: 12,
     marginBottom: 5,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#93c5fd',
+    color: "#93c5fd",
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 20,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -471,72 +539,72 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
     marginBottom: 8,
   },
   pickerContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#e5e7eb',
-    overflow: 'hidden',
+    borderColor: "#e5e7eb",
+    overflow: "hidden",
   },
   picker: {
     height: 50,
   },
   amountGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
     marginBottom: 12,
   },
   amountButton: {
     flex: 1,
-    minWidth: '30%',
-    backgroundColor: '#fff',
+    minWidth: "30%",
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   amountButtonSelected: {
-    borderColor: '#1e3a8a',
-    backgroundColor: '#1e3a8a',
+    borderColor: "#1e3a8a",
+    backgroundColor: "#1e3a8a",
   },
   amountButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: "bold",
+    color: "#1f2937",
   },
   amountButtonTextSelected: {
-    color: '#fff',
+    color: "#fff",
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: '#1f2937',
+    color: "#1f2937",
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   checkboxLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#1f2937',
+    fontWeight: "500",
+    color: "#1f2937",
     marginLeft: 12,
   },
   frequencyRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
     marginBottom: 20,
     paddingLeft: 36,
@@ -545,85 +613,139 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: "#e5e7eb",
   },
   frequencyChipSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#1e3a8a',
+    backgroundColor: "#eff6ff",
+    borderColor: "#1e3a8a",
   },
   frequencyChipText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
   },
   frequencyChipTextSelected: {
-    color: '#1e3a8a',
+    color: "#1e3a8a",
   },
   paymentMethodsInfo: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
   paymentMethodsTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontWeight: "600",
+    color: "#6b7280",
     marginBottom: 12,
   },
   paymentMethodsIcons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   paymentMethodBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#f9fafb',
+    backgroundColor: "#f9fafb",
     borderRadius: 8,
   },
   paymentMethodText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontWeight: "600",
+    color: "#1f2937",
   },
   donateButton: {
-    backgroundColor: '#1e3a8a',
+    backgroundColor: "#1e3a8a",
     borderRadius: 12,
     padding: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 12,
-    shadowColor: '#1e3a8a',
+    shadowColor: "#1e3a8a",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
   },
   donateButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: "#9ca3af",
     shadowOpacity: 0,
     elevation: 0,
   },
   donateButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   securityNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     marginTop: 16,
   },
   securityText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: "#6b7280",
+  },
+  checkboxRowDisabled: {
+    opacity: 0.5,
+  },
+  checkboxLabelDisabled: {
+    color: "#9ca3af",
+  },
+  infoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#eff6ff",
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: "#1e3a8a",
+    lineHeight: 18,
+  },
+  manageSection: {
+    marginTop: 32,
+    paddingTop: 24,
+    alignItems: "center",
+  },
+  manageDivider: {
+    height: 1,
+    backgroundColor: "#e5e7eb",
+    width: "100%",
+    marginBottom: 24,
+  },
+  manageText: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  manageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: "#eff6ff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+  },
+  manageButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1e3a8a",
   },
 });
