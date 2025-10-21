@@ -44,7 +44,8 @@ export interface Donation {
   currency: string;
   donation_type_label: string;
   is_recurring: boolean;
-  recurring_frequency?: string;
+  frequency?: string;
+  status?: string
   payment_status: 'succeeded' | 'pending' | 'failed';
   date: string;
   created_at: any;

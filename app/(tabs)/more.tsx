@@ -182,7 +182,7 @@ export default function MoreScreen(): React.JSX.Element {
               </View>
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoLabel}>Version</Text>
-                <Text style={styles.infoValue}>1.3.0</Text>
+                <Text style={styles.infoValue}>1.0.0</Text>
               </View>
             </View>
 
@@ -191,8 +191,8 @@ export default function MoreScreen(): React.JSX.Element {
                 <Ionicons name="code-slash" size={24} color="#6b7280" />
               </View>
               <View style={styles.infoTextContainer}>
-                <Text style={styles.infoLabel}>Developed with</Text>
-                <Text style={styles.infoValue}>React Native & Firebase</Text>
+                <Text style={styles.infoLabel}>Developed by</Text>
+                <Text style={styles.infoValue}>Ibrahim Eter</Text>
               </View>
             </View>
           </View>
