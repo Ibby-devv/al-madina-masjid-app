@@ -5,16 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Import custom hooks
 import { useEvents } from '../../hooks/useEvents';
+import { useEventCategories } from '../../hooks/useEventCategories';  // ✅ NEW: Import categories hook
 import { useFirebaseData } from '../../hooks/useFirebaseData';
-
-// Import types and utility
-import { getCategoryColor } from '../../types';
 
 export default function EventsScreen(): React.JSX.Element {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
-  // Load events from Firebase
+  // Load events and categories from Firebase
   const { upcomingEvents, loading: eventsLoading } = useEvents();
+  const { categories, loading: categoriesLoading } = useEventCategories();  // ✅ NEW: Load categories
   const { mosqueSettings } = useFirebaseData();
 
   // Format event date
@@ -32,20 +31,31 @@ export default function EventsScreen(): React.JSX.Element {
     }
   };
 
+  // ✅ NEW: Get category colors dynamically
+  const getCategoryColor = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (category) {
+      return { bg: category.color_bg, text: category.color_text };
+    }
+    // Fallback gray
+    return { bg: '#e5e7eb', text: '#374151' };
+  };
+
+  // ✅ NEW: Get category label dynamically
+  const getCategoryLabel = (categoryId: string): string => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category?.label || categoryId;
+  };
+
   // Filter events by category
   const filteredEvents = selectedCategory === 'all' 
     ? upcomingEvents 
     : upcomingEvents.filter(event => event.category === selectedCategory);
 
-  // Event categories for filter
-  const categories = [
+  // ✅ NEW: Build category filter dynamically from Firestore
+  const categoryFilters = [
     { id: 'all', label: 'All' },
-    { id: 'lecture', label: 'Lectures' },
-    { id: 'community', label: 'Community' },
-    { id: 'youth', label: 'Youth' },
-    { id: 'women', label: 'Women' },
-    { id: 'education', label: 'Education' },
-    { id: 'charity', label: 'Charity' },
+    ...categories.map(cat => ({ id: cat.id, label: cat.label }))
   ];
 
   return (
@@ -67,23 +77,27 @@ export default function EventsScreen(): React.JSX.Element {
         style={styles.categoryFilter}
         contentContainerStyle={styles.categoryFilterContent}
       >
-        {categories.map(cat => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[
-              styles.categoryButton,
-              selectedCategory === cat.id && styles.categoryButtonActive
-            ]}
-            onPress={() => setSelectedCategory(cat.id)}
-          >
-            <Text style={[
-              styles.categoryButtonText,
-              selectedCategory === cat.id && styles.categoryButtonTextActive
-            ]}>
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {categoriesLoading ? (
+          <Text style={styles.categoryButtonText}>Loading categories...</Text>
+        ) : (
+          categoryFilters.map(cat => (
+            <TouchableOpacity
+              key={cat.id}
+              style={[
+                styles.categoryButton,
+                selectedCategory === cat.id && styles.categoryButtonActive
+              ]}
+              onPress={() => setSelectedCategory(cat.id)}
+            >
+              <Text style={[
+                styles.categoryButtonText,
+                selectedCategory === cat.id && styles.categoryButtonTextActive
+              ]}>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       {/* Events List */}
@@ -103,7 +117,7 @@ export default function EventsScreen(): React.JSX.Element {
               <Text style={styles.emptyStateText}>
                 {selectedCategory === 'all' 
                   ? 'Check back soon for new events!' 
-                  : `No upcoming ${selectedCategory} events`}
+                  : `No upcoming ${getCategoryLabel(selectedCategory)} events`}
               </Text>
             </View>
           ) : (
@@ -115,7 +129,7 @@ export default function EventsScreen(): React.JSX.Element {
                   <View key={event.id} style={styles.eventCard}>
                     <View style={[styles.eventCategory, { backgroundColor: categoryColors.bg }]}>
                       <Text style={[styles.eventCategoryText, { color: categoryColors.text }]}>
-                        {event.category.toUpperCase()}
+                        {getCategoryLabel(event.category).toUpperCase()}
                       </Text>
                     </View>
                     
