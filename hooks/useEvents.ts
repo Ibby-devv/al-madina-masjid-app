@@ -1,3 +1,5 @@
+// masjid-app/hooks/useEvents.ts - UPDATED VERSION
+
 import { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -22,7 +24,7 @@ export const useEvents = (): UseEventsReturn => {
     try {
       setError(null);
 
-      // Get today's date in YYYY-MM-DD format (Sydney timezone)
+      // Get today's date in Sydney timezone (YYYY-MM-DD format)
       const getSydneyDate = (): string => {
         const sydneyDate = new Date().toLocaleString('en-AU', {
           timeZone: 'Australia/Sydney',
@@ -38,12 +40,12 @@ export const useEvents = (): UseEventsReturn => {
       const today = getSydneyDate();
       console.log('Fetching events from date:', today);
 
-      // Real-time listener for upcoming active events only
+      // Real-time listener for active upcoming events only
       const eventsRef = collection(db, 'events');
       const q = query(
         eventsRef,
         where('is_active', '==', true),
-        where('date', '>=', today),  // ← NEW: Only fetch upcoming events
+        where('date', '>=', today),  // ✅ NEW: Only fetch upcoming events
         orderBy('date', 'asc')
       );
 

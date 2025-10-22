@@ -51,14 +51,30 @@ export interface MosqueSettings {
   last_updated?: string;
 }
 
+export interface EventCategory {
+  id: string;
+  label: string;
+  color_bg: string;
+  color_text: string;
+  order: number;
+  is_active: boolean;
+}
+
+// NEW: Event Categories Config (for Firestore document)
+export interface EventCategoriesConfig {
+  categories: EventCategory[];
+  updated_at: string;
+}
+
+// Event
 export interface Event {
   id: string;
   title: string;
   description: string;
-  date: string; // ISO date string (YYYY-MM-DD)
+  date: string; // YYYY-MM-DD format
   time: string; // e.g., "7:00 PM"
   location?: string;
-  category: 'lecture' | 'community' | 'youth' | 'women' | 'education' | 'charity' | 'other';
+  category: string; // CHANGED: from union type to string
   speaker?: string;
   image_url?: string;
   rsvp_enabled?: boolean;
@@ -128,21 +144,16 @@ export const calculateIqamaTime = (
 };
 
 // Utility function to get category color
-export const getCategoryColor = (category: string): { bg: string; text: string } => {
-  switch (category) {
-    case 'lecture':
-      return { bg: '#dbeafe', text: '#1e40af' };
-    case 'community':
-      return { bg: '#fef3c7', text: '#92400e' };
-    case 'youth':
-      return { bg: '#fce7f3', text: '#9f1239' };
-    case 'women':
-      return { bg: '#f3e8ff', text: '#6b21a8' };
-    case 'education':
-      return { bg: '#dcfce7', text: '#15803d' };
-    case 'charity':
-      return { bg: '#fff7ed', text: '#c2410c' };
-    default:
-      return { bg: '#e5e7eb', text: '#374151' };
-  }
+export const getCategoryColor = (categoryId: string) => {
+  // Default fallback colors
+  const defaultColors: Record<string, { bg: string; text: string }> = {
+    lecture: { bg: '#dbeafe', text: '#1e40af' },
+    class: { bg: '#fef3c7', text: '#92400e' },
+    youth: { bg: '#fce7f3', text: '#9f1239' },
+    women: { bg: '#f3e8ff', text: '#6b21a8' },
+    education: { bg: '#dcfce7', text: '#15803d' },
+    charity: { bg: '#fff7ed', text: '#c2410c' },
+  };
+
+  return defaultColors[categoryId] || { bg: '#e5e7eb', text: '#374151' };
 };
