@@ -61,6 +61,7 @@ export const useDonation = () => {
         donor_phone: data.donorPhone,
         donation_type_id: data.donationType,
         donation_type_label: data.donationTypeLabel,
+        campaign_id: data.campaignId || "",
         donor_message: data.donorMessage,
       };
 
@@ -123,6 +124,7 @@ export const useDonation = () => {
         donor_phone: data.donorPhone,
         donation_type_id: data.donationType,
         donation_type_label: data.donationTypeLabel,
+        campaign_id: data.campaignId || ""
       };
 
       console.log('📦 Payload:', payload);

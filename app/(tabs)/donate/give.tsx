@@ -40,7 +40,9 @@ export default function GiveTab(): React.JSX.Element {
   // Form state
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedTypeLabel, setSelectedTypeLabel] = useState<string>("");
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(
+    null
+  );
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
@@ -180,7 +182,9 @@ export default function GiveTab(): React.JSX.Element {
         isRecurring
           ? `Thank you for setting up a ${frequency} donation of $${getDisplayAmount()}!`
           : `Thank you for your donation of $${getDisplayAmount()}!${
-              selectedCampaign ? ` Your support for ${selectedCampaign.title} is greatly appreciated.` : ''
+              selectedCampaign
+                ? ` Your support for ${selectedCampaign.title} is greatly appreciated.`
+                : ""
             }`,
         [
           {
@@ -243,7 +247,7 @@ export default function GiveTab(): React.JSX.Element {
   const shouldShowCampaigns = campaigns.length > 0 && !showDonationForm;
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={["bottom"]}>
       <StatusBar barStyle="dark-content" />
 
       <KeyboardAvoidingView
@@ -261,7 +265,7 @@ export default function GiveTab(): React.JSX.Element {
             {shouldShowCampaigns && (
               <>
                 <Text style={styles.sectionTitle}>Support a Campaign</Text>
-                
+
                 {/* General Donation Card (always first) */}
                 <GeneralDonationCard onPress={handleGeneralDonationPress} />
 
@@ -281,7 +285,7 @@ export default function GiveTab(): React.JSX.Element {
               <>
                 {/* Back button if came from campaigns */}
                 {showDonationForm && campaigns.length > 0 && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.backButton}
                     onPress={handleBackToCampaigns}
                   >
@@ -302,32 +306,34 @@ export default function GiveTab(): React.JSX.Element {
 
                 {/* Original donation form */}
                 {/* Donation Type Dropdown */}
-                <View style={styles.section}>
-                  <Text style={styles.label}>Donation Type *</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={selectedType}
-                      onValueChange={(value, index) => {
-                        setSelectedType(value);
-                        const type = settings.donation_types.find(
-                          (t) => t.id === value
-                        );
-                        if (type) setSelectedTypeLabel(type.label);
-                      }}
-                      style={styles.picker}
-                    >
-                      {settings.donation_types
-                        .filter((type) => type.enabled)
-                        .map((type) => (
-                          <Picker.Item
-                            key={type.id}
-                            label={type.label}
-                            value={type.id}
-                          />
-                        ))}
-                    </Picker>
+                {!selectedCampaign && (
+                  <View style={styles.section}>
+                    <Text style={styles.label}>Donation Type *</Text>
+                    <View style={styles.pickerContainer}>
+                      <Picker
+                        selectedValue={selectedType}
+                        onValueChange={(value, index) => {
+                          setSelectedType(value);
+                          const type = settings.donation_types.find(
+                            (t) => t.id === value
+                          );
+                          if (type) setSelectedTypeLabel(type.label);
+                        }}
+                        style={styles.picker}
+                      >
+                        {settings.donation_types
+                          .filter((type) => type.enabled)
+                          .map((type) => (
+                            <Picker.Item
+                              key={type.id}
+                              label={type.label}
+                              value={type.id}
+                            />
+                          ))}
+                      </Picker>
+                    </View>
                   </View>
-                </View>
+                )}
 
                 {/* Amount Selection */}
                 <View style={styles.section}>
@@ -394,7 +400,8 @@ export default function GiveTab(): React.JSX.Element {
                           key={freq.id}
                           style={[
                             styles.frequencyChip,
-                            frequency === freq.id && styles.frequencyChipSelected,
+                            frequency === freq.id &&
+                              styles.frequencyChipSelected,
                           ]}
                           onPress={() => setFrequency(freq.id as any)}
                         >
@@ -494,7 +501,11 @@ export default function GiveTab(): React.JSX.Element {
                     )}
                     {Platform.OS === "android" && (
                       <View style={styles.paymentMethodBadge}>
-                        <Ionicons name="logo-google" size={20} color="#4285F4" />
+                        <Ionicons
+                          name="logo-google"
+                          size={20}
+                          color="#4285F4"
+                        />
                         <Text style={styles.paymentMethodText}>Google Pay</Text>
                       </View>
                     )}
@@ -545,7 +556,7 @@ export default function GiveTab(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   loadingContainer: {
     flex: 1,
@@ -568,7 +579,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 20,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -576,38 +587,38 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1f2937',
+    fontWeight: "bold",
+    color: "#1f2937",
     marginBottom: 20,
   },
   backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginBottom: 20,
     paddingVertical: 8,
   },
   backButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e3a8a',
+    fontWeight: "600",
+    color: "#1e3a8a",
   },
   selectedCampaignBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
-    backgroundColor: '#eff6ff',
+    backgroundColor: "#eff6ff",
     padding: 12,
     borderRadius: 12,
     marginBottom: 20,
     borderLeftWidth: 4,
-    borderLeftColor: '#1e3a8a',
+    borderLeftColor: "#1e3a8a",
   },
   selectedCampaignText: {
     flex: 1,
     fontSize: 14,
-    fontWeight: '600',
-    color: '#1e3a8a',
+    fontWeight: "600",
+    color: "#1e3a8a",
   },
   section: {
     marginBottom: 24,
