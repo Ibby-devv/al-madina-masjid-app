@@ -1,5 +1,5 @@
 // ============================================================================
-// DONATION SCREEN - SIMPLIFIED WITH PAYMENT SHEET
+// DONATION SCREEN - SIMPLIFIED WITH PAYMENT SHEET + CAMPAIGNS
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
@@ -26,9 +26,13 @@ import { useFirebaseData } from "../../../hooks/useFirebaseData";
 import { useDonation } from "../../../hooks/useDonation";
 import { DonationFormData } from "../../../types/donation";
 import { router } from "expo-router";
+import { useCampaigns, Campaign } from "../../../hooks/useCampaigns";
+import CampaignCard from "../../../components/CampaignCard";
+import GeneralDonationCard from "../../../components/GeneralDonationCard";
 
 export default function GiveTab(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
+  const { campaigns, loading: campaignsLoading } = useCampaigns();
   const { settings, loading, error, createDonation, createSubscription } =
     useDonation();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -36,6 +40,8 @@ export default function GiveTab(): React.JSX.Element {
   // Form state
   const [selectedType, setSelectedType] = useState<string>("");
   const [selectedTypeLabel, setSelectedTypeLabel] = useState<string>("");
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [showDonationForm, setShowDonationForm] = useState(false);
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
   const [isRecurring, setIsRecurring] = useState(false);
@@ -125,6 +131,7 @@ export default function GiveTab(): React.JSX.Element {
         donorEmail: donorEmail.trim() || "anonymous@donation.com",
         donorPhone: "",
         donorMessage: undefined,
+        campaignId: selectedCampaign?.id || undefined,
       };
 
       // Create payment intent or subscription
@@ -172,7 +179,9 @@ export default function GiveTab(): React.JSX.Element {
         "Success! 🎉",
         isRecurring
           ? `Thank you for setting up a ${frequency} donation of $${getDisplayAmount()}!`
-          : `Thank you for your donation of $${getDisplayAmount()}!`,
+          : `Thank you for your donation of $${getDisplayAmount()}!${
+              selectedCampaign ? ` Your support for ${selectedCampaign.title} is greatly appreciated.` : ''
+            }`,
         [
           {
             text: "Done",
@@ -184,6 +193,8 @@ export default function GiveTab(): React.JSX.Element {
               setDonorEmail("");
               setIsAnonymous(false);
               setIsRecurring(false);
+              setShowDonationForm(false);
+              setSelectedCampaign(null);
             },
           },
         ]
@@ -193,6 +204,28 @@ export default function GiveTab(): React.JSX.Element {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleCampaignPress = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setShowDonationForm(true);
+  };
+
+  const handleGeneralDonationPress = () => {
+    setSelectedCampaign(null);
+    setShowDonationForm(true);
+  };
+
+  const handleBackToCampaigns = () => {
+    setShowDonationForm(false);
+    setSelectedCampaign(null);
+    // Reset form
+    setAmount("");
+    setCustomAmount("");
+    setDonorName("");
+    setDonorEmail("");
+    setIsAnonymous(false);
+    setIsRecurring(false);
   };
 
   if (!settings) {
@@ -206,9 +239,12 @@ export default function GiveTab(): React.JSX.Element {
     );
   }
 
+  // Check if we should show campaigns view or donation form
+  const shouldShowCampaigns = campaigns.length > 0 && !showDonationForm;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-  <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="dark-content" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -221,238 +257,284 @@ export default function GiveTab(): React.JSX.Element {
         >
           {/* Content */}
           <View style={styles.contentContainer}>
-            {/* Donation Type Dropdown */}
-            <View style={styles.section}>
-              <Text style={styles.label}>Donation Type *</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={selectedType}
-                  onValueChange={(value, index) => {
-                    setSelectedType(value);
-                    const type = settings.donation_types.find(
-                      (t) => t.id === value
-                    );
-                    if (type) setSelectedTypeLabel(type.label);
-                  }}
-                  style={styles.picker}
-                >
-                  {settings.donation_types
-                    .filter((type) => type.enabled)
-                    .map((type) => (
-                      <Picker.Item
-                        key={type.id}
-                        label={type.label}
-                        value={type.id}
-                      />
-                    ))}
-                </Picker>
-              </View>
-            </View>
+            {/* Show Campaigns View */}
+            {shouldShowCampaigns && (
+              <>
+                <Text style={styles.sectionTitle}>Support a Campaign</Text>
+                
+                {/* General Donation Card (always first) */}
+                <GeneralDonationCard onPress={handleGeneralDonationPress} />
 
-            {/* Amount Selection */}
-            <View style={styles.section}>
-              <Text style={styles.label}>Amount (AUD) *</Text>
-              <View style={styles.amountGrid}>
-                {settings.preset_amounts.map((presetAmount) => (
-                  <TouchableOpacity
-                    key={presetAmount}
-                    style={[
-                      styles.amountButton,
-                      amount === presetAmount.toString() &&
-                        styles.amountButtonSelected,
-                    ]}
-                    onPress={() => handlePresetAmount(presetAmount)}
-                  >
-                    <Text
-                      style={[
-                        styles.amountButtonText,
-                        amount === presetAmount.toString() &&
-                          styles.amountButtonTextSelected,
-                      ]}
-                    >
-                      ${presetAmount}
-                    </Text>
-                  </TouchableOpacity>
+                {/* Campaign Cards */}
+                {campaigns.map((campaign) => (
+                  <CampaignCard
+                    key={campaign.id}
+                    campaign={campaign}
+                    onPress={() => handleCampaignPress(campaign)}
+                  />
                 ))}
-              </View>
-
-              <TextInput
-                style={styles.input}
-                placeholder="Or enter custom amount"
-                placeholderTextColor="#9ca3af"
-                keyboardType="numeric"
-                value={customAmount}
-                onChangeText={handleCustomAmount}
-              />
-            </View>
-
-            {/* Recurring Toggle */}
-            <TouchableOpacity
-              style={styles.checkboxRow}
-              onPress={() => {
-                const newValue = !isRecurring;
-                setIsRecurring(newValue);
-                if (newValue && isAnonymous) {
-                  setIsAnonymous(false); // Auto-uncheck anonymous
-                }
-              }}
-            >
-              <Ionicons
-                name={isRecurring ? "checkbox" : "square-outline"}
-                size={24}
-                color="#1e3a8a"
-              />
-              <Text style={styles.checkboxLabel}>Make this recurring</Text>
-            </TouchableOpacity>
-
-            {isRecurring && (
-              <View style={styles.frequencyRow}>
-                {settings.recurring_frequencies
-                  .filter((freq) => freq.enabled)
-                  .map((freq) => (
-                    <TouchableOpacity
-                      key={freq.id}
-                      style={[
-                        styles.frequencyChip,
-                        frequency === freq.id && styles.frequencyChipSelected,
-                      ]}
-                      onPress={() => setFrequency(freq.id as any)}
-                    >
-                      <Text
-                        style={[
-                          styles.frequencyChipText,
-                          frequency === freq.id &&
-                            styles.frequencyChipTextSelected,
-                        ]}
-                      >
-                        {freq.label}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-              </View>
+              </>
             )}
 
-            {/* Anonymous Toggle */}
-            <View style={styles.section}>
-              <TouchableOpacity
-                style={[
-                  styles.checkboxRow,
-                  isRecurring && styles.checkboxRowDisabled,
-                ]}
-                onPress={() => {
-                  if (!isRecurring) {
-                    setIsAnonymous(!isAnonymous);
-                  }
-                }}
-                disabled={isRecurring}
-              >
-                <Ionicons
-                  name={isAnonymous ? "checkbox" : "square-outline"}
-                  size={24}
-                  color="#1e3a8a"
-                />
-                <Text
-                  style={[
-                    styles.checkboxLabel,
-                    isRecurring && styles.checkboxLabelDisabled,
-                  ]}
+            {/* Show Donation Form (original form) */}
+            {(!shouldShowCampaigns || showDonationForm) && (
+              <>
+                {/* Back button if came from campaigns */}
+                {showDonationForm && campaigns.length > 0 && (
+                  <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={handleBackToCampaigns}
+                  >
+                    <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
+                    <Text style={styles.backButtonText}>Back to Campaigns</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Show selected campaign info if applicable */}
+                {selectedCampaign && (
+                  <View style={styles.selectedCampaignBanner}>
+                    <Ionicons name="heart" size={20} color="#1e3a8a" />
+                    <Text style={styles.selectedCampaignText}>
+                      Donating to: {selectedCampaign.title}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Original donation form */}
+                {/* Donation Type Dropdown */}
+                <View style={styles.section}>
+                  <Text style={styles.label}>Donation Type *</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={selectedType}
+                      onValueChange={(value, index) => {
+                        setSelectedType(value);
+                        const type = settings.donation_types.find(
+                          (t) => t.id === value
+                        );
+                        if (type) setSelectedTypeLabel(type.label);
+                      }}
+                      style={styles.picker}
+                    >
+                      {settings.donation_types
+                        .filter((type) => type.enabled)
+                        .map((type) => (
+                          <Picker.Item
+                            key={type.id}
+                            label={type.label}
+                            value={type.id}
+                          />
+                        ))}
+                    </Picker>
+                  </View>
+                </View>
+
+                {/* Amount Selection */}
+                <View style={styles.section}>
+                  <Text style={styles.label}>Amount (AUD) *</Text>
+                  <View style={styles.amountGrid}>
+                    {settings.preset_amounts.map((presetAmount) => (
+                      <TouchableOpacity
+                        key={presetAmount}
+                        style={[
+                          styles.amountButton,
+                          amount === presetAmount.toString() &&
+                            styles.amountButtonSelected,
+                        ]}
+                        onPress={() => handlePresetAmount(presetAmount)}
+                      >
+                        <Text
+                          style={[
+                            styles.amountButtonText,
+                            amount === presetAmount.toString() &&
+                              styles.amountButtonTextSelected,
+                          ]}
+                        >
+                          ${presetAmount}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Or enter custom amount"
+                    placeholderTextColor="#9ca3af"
+                    keyboardType="numeric"
+                    value={customAmount}
+                    onChangeText={handleCustomAmount}
+                  />
+                </View>
+
+                {/* Recurring Toggle */}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => {
+                    const newValue = !isRecurring;
+                    setIsRecurring(newValue);
+                    if (newValue && isAnonymous) {
+                      setIsAnonymous(false); // Auto-uncheck anonymous
+                    }
+                  }}
                 >
-                  Donate anonymously
-                  {isRecurring && " (Not available for recurring)"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Donor Information */}
-            {(!isAnonymous || isRecurring) && (
-              <View style={styles.section}>
-                <Text style={styles.label}>Your Information</Text>
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Full Name *"
-                  placeholderTextColor="#9ca3af"
-                  value={donorName}
-                  onChangeText={setDonorName}
-                  autoCapitalize="words"
-                />
-
-                <TextInput
-                  style={styles.input}
-                  placeholder={isRecurring ? "Email *" : "Email (optional)"}
-                  placeholderTextColor="#9ca3af"
-                  value={donorEmail}
-                  onChangeText={setDonorEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                />
+                  <Ionicons
+                    name={isRecurring ? "checkbox" : "square-outline"}
+                    size={24}
+                    color="#1e3a8a"
+                  />
+                  <Text style={styles.checkboxLabel}>Make this recurring</Text>
+                </TouchableOpacity>
 
                 {isRecurring && (
-                  <View style={styles.infoBox}>
+                  <View style={styles.frequencyRow}>
+                    {settings.recurring_frequencies
+                      .filter((freq) => freq.enabled)
+                      .map((freq) => (
+                        <TouchableOpacity
+                          key={freq.id}
+                          style={[
+                            styles.frequencyChip,
+                            frequency === freq.id && styles.frequencyChipSelected,
+                          ]}
+                          onPress={() => setFrequency(freq.id as any)}
+                        >
+                          <Text
+                            style={[
+                              styles.frequencyChipText,
+                              frequency === freq.id &&
+                                styles.frequencyChipTextSelected,
+                            ]}
+                          >
+                            {freq.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                  </View>
+                )}
+
+                {/* Anonymous Toggle */}
+                <View style={styles.section}>
+                  <TouchableOpacity
+                    style={[
+                      styles.checkboxRow,
+                      isRecurring && styles.checkboxRowDisabled,
+                    ]}
+                    onPress={() => {
+                      if (!isRecurring) {
+                        setIsAnonymous(!isAnonymous);
+                      }
+                    }}
+                    disabled={isRecurring}
+                  >
                     <Ionicons
-                      name="information-circle"
-                      size={20}
+                      name={isAnonymous ? "checkbox" : "square-outline"}
+                      size={24}
                       color="#1e3a8a"
                     />
-                    <Text style={styles.infoText}>
-                      Email required to manage your recurring donation
+                    <Text
+                      style={[
+                        styles.checkboxLabel,
+                        isRecurring && styles.checkboxLabelDisabled,
+                      ]}
+                    >
+                      Donate anonymously
+                      {isRecurring && " (Not available for recurring)"}
                     </Text>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Payment Methods Info */}
-            <View style={styles.paymentMethodsInfo}>
-              <Text style={styles.paymentMethodsTitle}>We accept:</Text>
-              <View style={styles.paymentMethodsIcons}>
-                {Platform.OS === "ios" && (
-                  <View style={styles.paymentMethodBadge}>
-                    <Ionicons name="logo-apple" size={20} color="#000" />
-                    <Text style={styles.paymentMethodText}>Apple Pay</Text>
-                  </View>
-                )}
-                {Platform.OS === "android" && (
-                  <View style={styles.paymentMethodBadge}>
-                    <Ionicons name="logo-google" size={20} color="#4285F4" />
-                    <Text style={styles.paymentMethodText}>Google Pay</Text>
-                  </View>
-                )}
-                <View style={styles.paymentMethodBadge}>
-                  <Ionicons name="card" size={20} color="#1e3a8a" />
-                  <Text style={styles.paymentMethodText}>Card</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-            </View>
 
-            {/* Donate Button */}
-            <TouchableOpacity
-              style={[
-                styles.donateButton,
-                processing && styles.donateButtonDisabled,
-              ]}
-              onPress={handleDonate}
-              disabled={processing}
-            >
-              {processing ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <>
-                  <Ionicons name="heart" size={24} color="#fff" />
-                  <Text style={styles.donateButtonText}>
-                    Donate ${getDisplayAmount().toFixed(2)}
+                {/* Donor Information */}
+                {(!isAnonymous || isRecurring) && (
+                  <View style={styles.section}>
+                    <Text style={styles.label}>Your Information</Text>
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Full Name *"
+                      placeholderTextColor="#9ca3af"
+                      value={donorName}
+                      onChangeText={setDonorName}
+                      autoCapitalize="words"
+                    />
+
+                    <TextInput
+                      style={styles.input}
+                      placeholder={isRecurring ? "Email *" : "Email (optional)"}
+                      placeholderTextColor="#9ca3af"
+                      value={donorEmail}
+                      onChangeText={setDonorEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                    />
+
+                    {isRecurring && (
+                      <View style={styles.infoBox}>
+                        <Ionicons
+                          name="information-circle"
+                          size={20}
+                          color="#1e3a8a"
+                        />
+                        <Text style={styles.infoText}>
+                          Email required to manage your recurring donation
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Payment Methods Info */}
+                <View style={styles.paymentMethodsInfo}>
+                  <Text style={styles.paymentMethodsTitle}>We accept:</Text>
+                  <View style={styles.paymentMethodsIcons}>
+                    {Platform.OS === "ios" && (
+                      <View style={styles.paymentMethodBadge}>
+                        <Ionicons name="logo-apple" size={20} color="#000" />
+                        <Text style={styles.paymentMethodText}>Apple Pay</Text>
+                      </View>
+                    )}
+                    {Platform.OS === "android" && (
+                      <View style={styles.paymentMethodBadge}>
+                        <Ionicons name="logo-google" size={20} color="#4285F4" />
+                        <Text style={styles.paymentMethodText}>Google Pay</Text>
+                      </View>
+                    )}
+                    <View style={styles.paymentMethodBadge}>
+                      <Ionicons name="card" size={20} color="#1e3a8a" />
+                      <Text style={styles.paymentMethodText}>Card</Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Donate Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.donateButton,
+                    processing && styles.donateButtonDisabled,
+                  ]}
+                  onPress={handleDonate}
+                  disabled={processing}
+                >
+                  {processing ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Ionicons name="heart" size={24} color="#fff" />
+                      <Text style={styles.donateButtonText}>
+                        Donate ${getDisplayAmount().toFixed(2)}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* Security Note */}
+                <View style={styles.securityNote}>
+                  <Ionicons name="shield-checkmark" size={20} color="#10b981" />
+                  <Text style={styles.securityText}>
+                    Secure payment powered by Stripe
                   </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Security Note */}
-            <View style={styles.securityNote}>
-              <Ionicons name="shield-checkmark" size={20} color="#10b981" />
-              <Text style={styles.securityText}>
-                Secure payment powered by Stripe
-              </Text>
-            </View>
+                </View>
+              </>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -462,9 +544,9 @@ export default function GiveTab(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   container: {
-  flex: 1,
-  backgroundColor: '#f5f5f5',
-},
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -485,13 +567,48 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   contentContainer: {
-  flex: 1,
-  backgroundColor: '#f5f5f5',
-  padding: 20,
-  borderTopLeftRadius: 30,
-  borderTopRightRadius: 30,
-  marginTop: -20,
-},
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1f2937',
+    marginBottom: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+    paddingVertical: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e3a8a',
+  },
+  selectedCampaignBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#eff6ff',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1e3a8a',
+  },
+  selectedCampaignText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e3a8a',
+  },
   section: {
     marginBottom: 24,
   },
@@ -672,38 +789,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#1e3a8a",
     lineHeight: 18,
-  },
-  manageSection: {
-    marginTop: 32,
-    paddingTop: 24,
-    alignItems: "center",
-  },
-  manageDivider: {
-    height: 1,
-    backgroundColor: "#e5e7eb",
-    width: "100%",
-    marginBottom: 24,
-  },
-  manageText: {
-    fontSize: 14,
-    color: "#6b7280",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  manageButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: "#eff6ff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#bfdbfe",
-  },
-  manageButtonText: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#1e3a8a",
   },
 });

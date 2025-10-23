@@ -33,6 +33,7 @@ export interface DonationFormData {
   donorEmail: string;
   donorPhone: string;
   donorMessage?: string;
+  campaignId?: string;
 }
 
 export interface Donation {
