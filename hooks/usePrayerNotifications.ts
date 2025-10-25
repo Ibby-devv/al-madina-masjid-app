@@ -26,21 +26,43 @@ export function usePrayerNotifications() {
 
   // Load settings from storage on mount
   useEffect(() => {
-    loadSettings();
-  }, []);
+  loadNotifications();
+}, []);
 
-  const loadSettings = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setNotifications(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error("Error loading notification settings:", error);
-    } finally {
-      setLoading(false);
+const loadNotifications = async () => {
+  try {
+    setLoading(true);
+    
+    // Load from AsyncStorage (local backup)
+    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      setNotifications(JSON.parse(stored));
     }
-  };
+
+    // Also load general notifications preference from Firestore
+    const userId = auth().currentUser?.uid;
+    if (userId) {
+      const userDoc = await firestore()
+        .collection('users')
+        .doc(userId)
+        .get();
+      
+      const userData = userDoc.data();
+      if (userData?.generalNotificationsEnabled !== undefined) {
+        setGeneralNotificationsEnabled(userData.generalNotificationsEnabled);
+      }
+      
+      // Also sync notification settings from Firestore if available
+      if (userData?.notificationSettings) {
+        setNotifications(userData.notificationSettings);
+      }
+    }
+  } catch (error) {
+    console.error('Error loading notifications:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const saveSettings = async (newSettings: AllPrayerNotifications) => {
     try {
@@ -117,5 +139,6 @@ export function usePrayerNotifications() {
     updatePrayerNotification,
     resetToDefaults,
     updateGeneralNotifications,
+    generalNotificationsEnabled
   };
 }

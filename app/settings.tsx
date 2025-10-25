@@ -1,160 +1,162 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { usePrayerNotifications } from '../hooks/usePrayerNotifications';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { usePrayerNotifications } from "../hooks/usePrayerNotifications";
 
 export default function SettingsScreen() {
-  const { generalNotificationsEnabled, updateGeneralNotifications } = usePrayerNotifications();
+  const { generalNotificationsEnabled, updateGeneralNotifications } =
+    usePrayerNotifications();
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Prayer Notifications Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Prayer Notifications</Text>
-        <Text style={styles.sectionDescription}>
-          Configure notifications for each prayer time
-        </Text>
-        <TouchableOpacity
-          style={styles.settingRow}
-          onPress={() => router.push('/(tabs)/prayer')}
-        >
-          <View style={styles.settingLeft}>
-            <Ionicons name="notifications-outline" size={24} color="#1e3a8a" />
-            <Text style={styles.settingLabel}>Prayer Times</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#94a3b8" />
-        </TouchableOpacity>
-      </View>
-
-      {/* General Notifications Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>General Notifications</Text>
-        
-        <View style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="megaphone-outline" size={24} color="#1e3a8a" />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.settingLabel}>Community Updates</Text>
-              <Text style={styles.settingSubtext}>
-                Events, fundraising campaigns, and important mosque announcements
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={generalNotificationsEnabled}
-            onValueChange={updateGeneralNotifications}
-            trackColor={{ false: '#cbd5e1', true: '#3b82f6' }}
-            thumbColor="#fff"
-          />
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Settings</Text>
+          <View style={{ width: 24 }} />
         </View>
-      </View>
 
-      {/* App Info Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>App Information</Text>
-        
-        <TouchableOpacity style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="information-circle-outline" size={24} color="#1e3a8a" />
-            <Text style={styles.settingLabel}>About</Text>
+        {/* General Notifications Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>General Notifications</Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons name="megaphone-outline" size={24} color="#1e3a8a" />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingLabel}>Community Updates</Text>
+                <Text style={styles.settingSubtext}>
+                  Events, fundraising campaigns, and important mosque
+                  announcements
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={generalNotificationsEnabled}
+              onValueChange={updateGeneralNotifications}
+              trackColor={{ false: "#cbd5e1", true: "#3b82f6" }}
+              thumbColor="#fff"
+            />
           </View>
-          <Ionicons name="chevron-forward" size={24} color="#94a3b8" />
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity style={styles.settingRow}>
-          <View style={styles.settingLeft}>
-            <Ionicons name="shield-checkmark-outline" size={24} color="#1e3a8a" />
-            <Text style={styles.settingLabel}>Privacy Policy</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#94a3b8" />
-        </TouchableOpacity>
-      </View>
+        {/* App Info Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>App Information</Text>
 
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Version 1.0.0</Text>
-      </View>
-    </ScrollView>
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="information-circle-outline"
+                size={24}
+                color="#1e3a8a"
+              />
+              <Text style={styles.settingLabel}>About</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#94a3b8" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={24}
+                color="#1e3a8a"
+              />
+              <Text style={styles.settingLabel}>Privacy Policy</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#94a3b8" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Version 1.0.0</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: "#f8fafc",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: "#e2e8f0",
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#1e3a8a',
+    fontWeight: "600",
+    color: "#1e3a8a",
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginTop: 16,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1e3a8a',
+    fontWeight: "600",
+    color: "#1e3a8a",
     marginBottom: 4,
   },
   sectionDescription: {
     fontSize: 14,
-    color: '#64748b',
+    color: "#64748b",
     marginBottom: 16,
   },
   settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: "#f1f5f9",
   },
   settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     flex: 1,
     marginRight: 12,
   },
   settingLabel: {
     fontSize: 16,
-    color: '#1e293b',
-    fontWeight: '500',
+    color: "#1e293b",
+    fontWeight: "500",
   },
   settingSubtext: {
     fontSize: 13,
-    color: '#64748b',
+    color: "#64748b",
     marginTop: 2,
     lineHeight: 18,
   },
   footer: {
     padding: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerText: {
     fontSize: 14,
-    color: '#94a3b8',
+    color: "#94a3b8",
   },
 });

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
 // Import custom components
 import LoadingScreen from "../../components/LoadingScreen";
@@ -25,7 +25,7 @@ import {
   PrayerName,
   PrayerNotificationSettings,
   getNotificationIconName,
-  getNotificationIconColor
+  getNotificationIconColor,
 } from "../../types/prayerNotifications";
 
 type ViewType = "prayer" | "jumuah";
@@ -157,8 +157,9 @@ export default function HomeScreen(): React.JSX.Element {
 
         let timeRemaining = "";
         if (hours > 0) {
-          timeRemaining = `${hours} Hour${hours > 1 ? "s" : ""
-            } ${minutes} Minute${minutes !== 1 ? "s" : ""}`;
+          timeRemaining = `${hours} Hour${
+            hours > 1 ? "s" : ""
+          } ${minutes} Minute${minutes !== 1 ? "s" : ""}`;
         } else {
           timeRemaining = `${minutes} Minute${minutes !== 1 ? "s" : ""}`;
         }
@@ -180,8 +181,9 @@ export default function HomeScreen(): React.JSX.Element {
 
       return {
         name: "Fajr",
-        timeRemaining: `${hours} Hour${hours > 1 ? "s" : ""} ${minutes} Minute${minutes !== 1 ? "s" : ""
-          }`,
+        timeRemaining: `${hours} Hour${hours > 1 ? "s" : ""} ${minutes} Minute${
+          minutes !== 1 ? "s" : ""
+        }`,
       };
     }
 
@@ -222,47 +224,47 @@ export default function HomeScreen(): React.JSX.Element {
   const prayers: Array<
     Prayer & { icon: string; showIqama: boolean; prayerKey: PrayerName }
   > = [
-      {
-        name: "Fajr",
-        adhan: prayerTimes?.fajr_adhan,
-        iqama: getDisplayedIqamaTime("fajr"),
-        icon: "moon",
-        showIqama: true,
-        prayerKey: "fajr",
-      },
-      {
-        name: "Dhuhr",
-        adhan: prayerTimes?.dhuhr_adhan,
-        iqama: getDisplayedIqamaTime("dhuhr"),
-        icon: "partly-sunny",
-        showIqama: true,
-        prayerKey: "dhuhr",
-      },
-      {
-        name: "Asr",
-        adhan: prayerTimes?.asr_adhan,
-        iqama: getDisplayedIqamaTime("asr"),
-        icon: "sunny-outline",
-        showIqama: true,
-        prayerKey: "asr",
-      },
-      {
-        name: "Maghrib",
-        adhan: prayerTimes?.maghrib_adhan,
-        iqama: getDisplayedIqamaTime("maghrib"),
-        icon: "moon-outline",
-        showIqama: true,
-        prayerKey: "maghrib",
-      },
-      {
-        name: "Isha",
-        adhan: prayerTimes?.isha_adhan,
-        iqama: getDisplayedIqamaTime("isha"),
-        icon: "moon",
-        showIqama: true,
-        prayerKey: "isha",
-      },
-    ];
+    {
+      name: "Fajr",
+      adhan: prayerTimes?.fajr_adhan,
+      iqama: getDisplayedIqamaTime("fajr"),
+      icon: "moon",
+      showIqama: true,
+      prayerKey: "fajr",
+    },
+    {
+      name: "Dhuhr",
+      adhan: prayerTimes?.dhuhr_adhan,
+      iqama: getDisplayedIqamaTime("dhuhr"),
+      icon: "partly-sunny",
+      showIqama: true,
+      prayerKey: "dhuhr",
+    },
+    {
+      name: "Asr",
+      adhan: prayerTimes?.asr_adhan,
+      iqama: getDisplayedIqamaTime("asr"),
+      icon: "sunny-outline",
+      showIqama: true,
+      prayerKey: "asr",
+    },
+    {
+      name: "Maghrib",
+      adhan: prayerTimes?.maghrib_adhan,
+      iqama: getDisplayedIqamaTime("maghrib"),
+      icon: "moon-outline",
+      showIqama: true,
+      prayerKey: "maghrib",
+    },
+    {
+      name: "Isha",
+      adhan: prayerTimes?.isha_adhan,
+      iqama: getDisplayedIqamaTime("isha"),
+      icon: "moon",
+      showIqama: true,
+      prayerKey: "isha",
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -271,18 +273,20 @@ export default function HomeScreen(): React.JSX.Element {
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.mosqueName}>
-            {mosqueSettings?.name || "Al Ansar Masjid"}
-          </Text>
-          <Text style={styles.date}>
-            {formatDate(currentTime)} | {getIslamicDate(currentTime)}
-          </Text>
-            <TouchableOpacity
-            onPress={() => router.push('../settings')}
+          <TouchableOpacity
+            onPress={() => router.push("../settings")}
             style={styles.settingsButton}
-            >
-            <Ionicons name="settings-outline" size={24} color="#1e3a8a" />
-            </TouchableOpacity>
+          >
+            <Ionicons name="settings-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.mosqueName}>
+              {mosqueSettings?.name || "Al Ansar Masjid"}
+            </Text>
+            <Text style={styles.date}>
+              {formatDate(currentTime)} | {getIslamicDate(currentTime)}
+            </Text>
+          </View>
         </View>
 
         {/* Toggle Buttons */}
@@ -374,7 +378,11 @@ export default function HomeScreen(): React.JSX.Element {
                       style={styles.bellIconContainer}
                       onPress={() => handleBellPress(prayer.prayerKey)}
                     >
-                      <Ionicons name={iconName as any} size={24} color={iconColor} />
+                      <Ionicons
+                        name={iconName as any}
+                        size={24}
+                        color={iconColor}
+                      />
                     </TouchableOpacity>
                   </View>
                 );
@@ -463,7 +471,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 15,
+    position: "relative",
+  },
+  headerContent: {
     alignItems: "center",
+  },
+  settingsButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    padding: 8,
+    zIndex: 10,
   },
   mosqueName: {
     fontSize: 24,
@@ -623,5 +641,5 @@ const styles = StyleSheet.create({
   },
   settingsButton: {
     padding: 8,
-  }
+  },
 });
