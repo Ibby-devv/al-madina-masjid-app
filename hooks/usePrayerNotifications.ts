@@ -4,16 +4,18 @@
 // Manages prayer notification settings (load, save, update)
 // ============================================================================
 
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import firestore from "@react-native-firebase/firestore";
+import auth from "@react-native-firebase/auth";
 import {
   AllPrayerNotifications,
   DEFAULT_PRAYER_NOTIFICATIONS,
   PrayerName,
   PrayerNotificationSettings,
-} from '../types/prayerNotifications';
+} from "../types/prayerNotifications";
 
-const STORAGE_KEY = '@prayer_notifications';
+const STORAGE_KEY = "@prayer_notifications";
 
 export function usePrayerNotifications() {
   const [notifications, setNotifications] = useState<AllPrayerNotifications>(
@@ -33,7 +35,7 @@ export function usePrayerNotifications() {
         setNotifications(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Error loading notification settings:', error);
+      console.error("Error loading notification settings:", error);
     } finally {
       setLoading(false);
     }
@@ -44,20 +46,41 @@ export function usePrayerNotifications() {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
       setNotifications(newSettings);
     } catch (error) {
-      console.error('Error saving notification settings:', error);
+      console.error("Error saving notification settings:", error);
       throw error;
     }
   };
 
   const updatePrayerNotification = async (
     prayer: PrayerName,
-    settings: PrayerNotificationSettings
+    updates: Partial<PrayerNotificationSettings>
   ) => {
     const newSettings = {
       ...notifications,
-      [prayer]: settings,
+      [prayer]: { ...notifications[prayer], ...updates },
     };
-    await saveSettings(newSettings);
+
+    setNotifications(newSettings);
+
+    // Save to AsyncStorage (local backup)
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+
+    // Save to Firestore (for Cloud Functions)
+    try {
+      const userId = auth().currentUser?.uid;
+      if (userId) {
+        await firestore().collection("users").doc(userId).set(
+          {
+            notificationSettings: newSettings,
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+        console.log("✅ Notification settings synced to Firestore");
+      }
+    } catch (error) {
+      console.error("❌ Error syncing settings to Firestore:", error);
+    }
   };
 
   const resetToDefaults = async () => {
