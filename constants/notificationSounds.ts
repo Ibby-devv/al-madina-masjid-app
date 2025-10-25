@@ -1,5 +1,5 @@
 // ============================================================================
-// SOUND REGISTRY
+// SOUND REGISTRY (Updated for Notifee)
 // Location: constants/notificationSounds.ts
 // Centralized configuration for prayer notification sounds
 // ============================================================================
@@ -7,47 +7,45 @@
 export interface NotificationSound {
   id: string;
   label: string;
-  file: any; // require() result
+  file: any; // require() result (for preview playback)
+  androidResource: string; // Android res/raw filename (for Notifee)
   duration: number; // seconds (for UI display)
   description?: string;
 }
 
 /**
  * Registry of available notification sounds
- * To add a new sound:
- * 1. Add the audio file to assets/sounds/notification/
- * 2. Add a new entry to this array
+ * 
+ * NOTE: Android sound files must be placed in:
+ * android/app/src/main/res/raw/
+ * 
+ * Filenames must be lowercase with underscores (no dashes or spaces)
  */
 export const NOTIFICATION_SOUNDS: NotificationSound[] = [
   {
     id: 'full-adhan',
     label: 'Full Adhan',
-    file: require('../assets/sounds/notification/full-adhan.mp3'),
-    duration: 180, // 3 minutes
+    file: require('../assets/sounds/notification/full_adhan.mp3'),
+    androidResource: 'full_adhan', // Used by Notifee
+    duration: 180,
     description: 'Traditional full adhan call',
   },
   {
     id: 'short-adhan',
     label: 'Short Adhan',
-    file: require('../assets/sounds/notification/short-adhan.mp3'),
-    duration: 5, // 5 seconds
+    file: require('../assets/sounds/notification/short_adhan.mp3'),
+    androidResource: 'short_adhan', // Used by Notifee
+    duration: 15,
     description: 'Brief adhan clip',
   },
   {
     id: 'long-beep',
     label: 'Long Beep',
-    file: require('../assets/sounds/notification/long-beep.mp3'),
-    duration: 3, // 3 seconds
-    description: 'Soft notification sound',
+    file: require('../assets/sounds/notification/long_beep.mp3'),
+    androidResource: 'long_beep', // Used by Notifee
+    duration: 3,
+    description: 'Simple beep tone',
   },
-  // Easy to add more sounds here in the future:
-  // {
-  //   id: 'madinah-adhan',
-  //   label: 'Madinah Adhan',
-  //   file: require('../assets/sounds/notification/madinah-adhan.mp3'),
-  //   duration: 120,
-  //   description: 'Adhan from Masjid Nabawi',
-  // },
 ];
 
 /**
@@ -55,6 +53,14 @@ export const NOTIFICATION_SOUNDS: NotificationSound[] = [
  */
 export const getSoundById = (id: string): NotificationSound | undefined => {
   return NOTIFICATION_SOUNDS.find(sound => sound.id === id);
+};
+
+/**
+ * Get Android resource name for sound (used by Notifee)
+ */
+export const getAndroidSoundResource = (id: string): string => {
+  const sound = getSoundById(id);
+  return sound?.androidResource || 'short_adhan';
 };
 
 /**

@@ -4,14 +4,22 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "build:local": "cd android && ./gradlew assembleRelease && cd ..",
+    "build:debug": "cd android && ./gradlew assembleDebug && cd ..",
+    "build:clean": "cd android && ./gradlew clean && cd ..",
+    "install:release": "adb install android/app/build/outputs/apk/release/app-release.apk",
+    "install:debug": "adb install android/app/build/outputs/apk/debug/app-debug.apk",
+    "build:install": "npm run build:local && npm run install:release",
+    "dev": "npx expo start --dev-client",
+    "prebuild": "npx expo prebuild",
+    "prebuild:clean": "npx expo prebuild --clean"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
+    "@notifee/react-native": "^9.1.8",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/bottom-tabs": "^7.4.0",
