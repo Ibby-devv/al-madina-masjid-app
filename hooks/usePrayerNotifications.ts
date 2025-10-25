@@ -22,6 +22,7 @@ export function usePrayerNotifications() {
     DEFAULT_PRAYER_NOTIFICATIONS
   );
   const [loading, setLoading] = useState(true);
+  const [generalNotificationsEnabled, setGeneralNotificationsEnabled] = useState(true);
 
   // Load settings from storage on mount
   useEffect(() => {
@@ -87,10 +88,34 @@ export function usePrayerNotifications() {
     await saveSettings(DEFAULT_PRAYER_NOTIFICATIONS);
   };
 
+  const updateGeneralNotifications = async (enabled: boolean) => {
+    setGeneralNotificationsEnabled(enabled);
+
+    try {
+      const userId = auth().currentUser?.uid;
+      if (userId) {
+        await firestore()
+          .collection('users')
+          .doc(userId)
+          .set(
+            {
+              generalNotificationsEnabled: enabled,
+              updatedAt: firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        console.log('✅ General notifications preference synced');
+      }
+    } catch (error) {
+      console.error('❌ Error syncing preference:', error);
+    }
+  };
+
   return {
     notifications,
     loading,
     updatePrayerNotification,
     resetToDefaults,
+    updateGeneralNotifications,
   };
 }
