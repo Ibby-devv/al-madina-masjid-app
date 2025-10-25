@@ -17,7 +17,6 @@ import PrayerNotificationModal from "../../components/PrayerNotificationModal";
 // Import custom hooks
 import { useFirebaseData } from "../../hooks/useFirebaseData";
 import { usePrayerNotifications } from "../../hooks/usePrayerNotifications";
-import { usePrayerScheduler } from "../../hooks/usePrayerScheduler";
 
 // Import types and utility
 import { Prayer, calculateIqamaTime } from "../../types";
@@ -46,11 +45,6 @@ export default function HomeScreen(): React.JSX.Element {
     loading: notificationsLoading,
     updatePrayerNotification,
   } = usePrayerNotifications();
-  // Notification scheduler
-  const { permissionGranted, scheduleAllNotifications } = usePrayerScheduler(
-    prayerTimes,
-    notifications
-  );
 
   // Update current time every minute
   useEffect(() => {
