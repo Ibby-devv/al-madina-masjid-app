@@ -10,8 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../../firebase';
+import { regionalFunctions } from '../../../firebase';
 
 export default function ManageTab() {
   const [email, setEmail] = useState('');
@@ -26,10 +25,7 @@ export default function ManageTab() {
     setLoading(true);
 
     try {
-      const requestManagementLink = httpsCallable(
-        functions,
-        'requestManagementLink'
-      );
+      const requestManagementLink = regionalFunctions.httpsCallable('requestManagementLink');
 
       const result = await requestManagementLink({ email: email.trim() });
       const data = result.data as any;

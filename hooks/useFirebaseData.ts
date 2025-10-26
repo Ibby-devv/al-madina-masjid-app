@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { PrayerTimes, JumuahTimes, MosqueSettings } from '../types';
+import { JumuahTimes, MosqueSettings, PrayerTimes } from '../types';
 
 interface UseFirebaseDataReturn {
   prayerTimes: PrayerTimes | null;
@@ -20,59 +19,65 @@ export const useFirebaseData = (): UseFirebaseDataReturn => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsubscribePrayer: Unsubscribe;
-    let unsubscribeJumuah: Unsubscribe;
-    let unsubscribeSettings: Unsubscribe;
+    let unsubscribePrayer: () => void;
+    let unsubscribeJumuah: () => void;
+    let unsubscribeSettings: () => void;
 
     try {
       setError(null);
 
       // Real-time listener for prayer times
-      unsubscribePrayer = onSnapshot(
-        doc(db, 'prayerTimes', 'current'),
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            setPrayerTimes(docSnapshot.data() as PrayerTimes);
-            console.log('Prayer times updated from Firebase');
+      unsubscribePrayer = db
+        .collection('prayerTimes')
+        .doc('current')
+        .onSnapshot(
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              setPrayerTimes(docSnapshot.data() as PrayerTimes);
+              console.log('Prayer times updated from Firebase');
+            }
+            setLoading(false);
+          },
+          (err) => {
+            console.error('Error listening to prayer times:', err);
+            setError(err.message);
+            setLoading(false);
           }
-          setLoading(false);
-        },
-        (err) => {
-          console.error('Error listening to prayer times:', err);
-          setError(err.message);
-          setLoading(false);
-        }
-      );
+        );
 
       // Real-time listener for Jumuah times
-      unsubscribeJumuah = onSnapshot(
-        doc(db, 'jumuahTimes', 'current'),
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            setJumuahTimes(docSnapshot.data() as JumuahTimes);
-            console.log('Jumuah times updated from Firebase');
+      unsubscribeJumuah = db
+        .collection('jumuahTimes')
+        .doc('current')
+        .onSnapshot(
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              setJumuahTimes(docSnapshot.data() as JumuahTimes);
+              console.log('Jumuah times updated from Firebase');
+            }
+          },
+          (err) => {
+            console.error('Error listening to Jumuah times:', err);
+            setError(err.message);
           }
-        },
-        (err) => {
-          console.error('Error listening to Jumuah times:', err);
-          setError(err.message);
-        }
-      );
+        );
 
       // Real-time listener for mosque settings
-      unsubscribeSettings = onSnapshot(
-        doc(db, 'mosqueSettings', 'info'),
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            setMosqueSettings(docSnapshot.data() as MosqueSettings);
-            console.log('Mosque settings updated from Firebase');
+      unsubscribeSettings = db
+        .collection('mosqueSettings')
+        .doc('info')
+        .onSnapshot(
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              setMosqueSettings(docSnapshot.data() as MosqueSettings);
+              console.log('Mosque settings updated from Firebase');
+            }
+          },
+          (err) => {
+            console.error('Error listening to mosque settings:', err);
+            setError(err.message);
           }
-        },
-        (err) => {
-          console.error('Error listening to mosque settings:', err);
-          setError(err.message);
-        }
-      );
+        );
     } catch (err) {
       console.error('Error setting up listeners:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

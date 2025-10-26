@@ -1,11 +1,10 @@
 // ============================================================================
 // HOOK: useCampaigns
 // Location: hooks/useCampaigns.ts
-// Fetches active campaigns from Firestore
+// Fetches active campaigns from Firestore - React Native Firebase version
 // ============================================================================
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export interface Campaign {
@@ -39,15 +38,12 @@ export function useCampaigns() {
       setError(null);
 
       // Query active campaigns that are visible in app
-      const campaignsRef = collection(db, 'campaigns');
-      const q = query(
-        campaignsRef,
-        where('status', '==', 'active'),
-        where('is_visible_in_app', '==', true),
-        orderBy('created_at', 'desc')
-      );
-
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await db
+        .collection('campaigns')
+        .where('status', '==', 'active')
+        .where('is_visible_in_app', '==', true)
+        .orderBy('created_at', 'desc')
+        .get();
       
       const loadedCampaigns: Campaign[] = [];
       querySnapshot.forEach((doc) => {

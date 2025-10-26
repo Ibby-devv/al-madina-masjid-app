@@ -1,7 +1,6 @@
-// masjid-app/hooks/useEvents.ts - UPDATED VERSION
+// masjid-app/hooks/useEvents.ts - React Native Firebase version
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Event } from '../types';
 
@@ -19,7 +18,7 @@ export const useEvents = (): UseEventsReturn => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let unsubscribe: Unsubscribe;
+    let unsubscribe: () => void;
 
     try {
       setError(null);
@@ -41,32 +40,28 @@ export const useEvents = (): UseEventsReturn => {
       console.log('Fetching events from date:', today);
 
       // Real-time listener for active upcoming events only
-      const eventsRef = collection(db, 'events');
-      const q = query(
-        eventsRef,
-        where('is_active', '==', true),
-        where('date', '>=', today),  // ✅ NEW: Only fetch upcoming events
-        orderBy('date', 'asc')
-      );
-
-      unsubscribe = onSnapshot(
-        q,
-        (querySnapshot) => {
-          const loadedEvents: Event[] = [];
-          querySnapshot.forEach((doc) => {
-            loadedEvents.push({ id: doc.id, ...doc.data() } as Event);
-          });
-          
-          setEvents(loadedEvents);
-          setLoading(false);
-          console.log('Upcoming events loaded:', loadedEvents.length);
-        },
-        (err) => {
-          console.error('Error listening to events:', err);
-          setError(err.message);
-          setLoading(false);
-        }
-      );
+      unsubscribe = db
+        .collection('events')
+        .where('is_active', '==', true)
+        .where('date', '>=', today)
+        .orderBy('date', 'asc')
+        .onSnapshot(
+          (querySnapshot) => {
+            const loadedEvents: Event[] = [];
+            querySnapshot.forEach((doc) => {
+              loadedEvents.push({ id: doc.id, ...doc.data() } as Event);
+            });
+            
+            setEvents(loadedEvents);
+            setLoading(false);
+            console.log('Upcoming events loaded:', loadedEvents.length);
+          },
+          (err) => {
+            console.error('Error listening to events:', err);
+            setError(err.message);
+            setLoading(false);
+          }
+        );
     } catch (err) {
       console.error('Error setting up events listener:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

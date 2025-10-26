@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { PrayerTimes, MosqueSettings } from '../types';
 
@@ -89,9 +88,12 @@ export const useAutoFetchPrayerTimes = (
       };
 
       // Get current prayer times from Firebase
-      const prayerTimesRef = doc(db, 'prayerTimes', 'current');
-      const prayerTimesSnap = await getDoc(prayerTimesRef);
-      const currentPrayerTimes = prayerTimesSnap.data() as PrayerTimes;
+      const prayerTimesDoc = await db
+        .collection('prayerTimes')
+        .doc('current')
+        .get();
+      
+      const currentPrayerTimes = prayerTimesDoc.data() as PrayerTimes;
 
       // Update ALL Adhan times, keep existing Iqama settings
       const updatedPrayerTimes: PrayerTimes = {
@@ -104,7 +106,10 @@ export const useAutoFetchPrayerTimes = (
         last_updated: today
       };
 
-      await setDoc(prayerTimesRef, updatedPrayerTimes);
+      await db
+        .collection('prayerTimes')
+        .doc('current')
+        .set(updatedPrayerTimes);
 
       console.log(`✅ All prayer times auto-updated:
         Fajr: ${convertTo12Hour(timings.Fajr)}
