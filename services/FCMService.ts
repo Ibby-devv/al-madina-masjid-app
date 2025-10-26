@@ -1,5 +1,6 @@
 import messaging from '@react-native-firebase/messaging';
 import auth from '@react-native-firebase/auth';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import { db } from '../firebase';
 
 class FCMService {
@@ -13,13 +14,20 @@ class FCMService {
     await this.signInAnonymously();
     
     // 2. Request notification permission
-    await this.requestPermission();
+    const permissionGranted = await this.requestPermission();
     
-    // 3. Get and save FCM token
-    await this.registerToken();
-    
-    // 4. Listen for token refresh
-    this.listenForTokenRefresh();
+    if (permissionGranted) {
+      // 3. Get and save FCM token
+      await this.registerToken();
+      
+      // 4. Listen for token refresh
+      this.listenForTokenRefresh();
+      
+      // 5. Setup foreground notification handler
+      this.setupForegroundHandler();
+    } else {
+      console.log('⚠️ Notifications disabled - user denied permission');
+    }
     
     console.log('✅ FCM Service initialized');
   }
@@ -46,20 +54,37 @@ class FCMService {
   }
 
   /**
-   * Request notification permission
+   * Request notification permission (fixed for Android)
    */
-  private async requestPermission() {
+  private async requestPermission(): Promise<boolean> {
     try {
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
+      console.log('📱 Requesting notification permission...');
+      
+      const settings = await notifee.requestPermission();
+      console.log('Permission settings:', settings);
+      
+      // On Android: authorizationStatus 1 = GRANTED
+      // On iOS: authorizationStatus 2 = AUTHORIZED, 3 = PROVISIONAL
+      const isGranted = 
+        settings.authorizationStatus === 1 || // Android granted
+        settings.authorizationStatus >= 2;     // iOS authorized/provisional
+      
+      if (isGranted) {
         console.log('✅ Notification permission granted');
+        
+        // Create notification channel for Android
+        await notifee.createChannel({
+          id: 'default',
+          name: 'Al-Madina Notifications',
+          importance: AndroidImportance.HIGH,
+          description: 'Notifications for events, campaigns, and prayer times',
+        });
+        
+        console.log('✅ Notification channel created');
         return true;
       } else {
-        console.log('❌ Notification permission denied');
+        console.log('⚠️ Notification permission denied');
+        console.log('User can enable notifications later in Settings screen');
         return false;
       }
     } catch (error) {
@@ -88,7 +113,7 @@ class FCMService {
         notificationsEnabled: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }, { merge: true }); // merge to not overwrite existing settings
+      }, { merge: true });
 
       console.log('✅ FCM token saved to Firestore');
     } catch (error) {
@@ -115,10 +140,60 @@ class FCMService {
   }
 
   /**
+   * Setup foreground notification handler
+   * This displays notifications when app is open
+   */
+  private setupForegroundHandler() {
+    messaging().onMessage(async (remoteMessage) => {
+      console.log('📬 Foreground notification received:', remoteMessage);
+      
+      // Display notification using Notifee when app is in foreground
+      await notifee.displayNotification({
+        title: remoteMessage.notification?.title || 'Al-Madina Masjid',
+        body: remoteMessage.notification?.body || '',
+        android: {
+          channelId: 'default',
+          importance: AndroidImportance.HIGH,
+          pressAction: {
+            id: 'default',
+          },
+        },
+        data: remoteMessage.data,
+      });
+    });
+
+    console.log('✅ Foreground notification handler setup');
+  }
+
+  /**
    * Get current user ID
    */
   getUserId(): string | null {
     return auth().currentUser?.uid || null;
+  }
+
+  /**
+   * Check if notifications are enabled (permission granted)
+   */
+  async areNotificationsEnabled(): Promise<boolean> {
+    try {
+      const settings = await notifee.getNotificationSettings();
+      return settings.authorizationStatus === 1 || settings.authorizationStatus >= 2;
+    } catch (error) {
+      console.error('Error checking notification settings:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Open notification settings (for when user needs to manually enable)
+   */
+  async openSettings() {
+    try {
+      await notifee.openNotificationSettings();
+    } catch (error) {
+      console.error('Error opening notification settings:', error);
+    }
   }
 }
 
