@@ -10,9 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { db, functions } from "../../../firebase";
-import { httpsCallable } from "firebase/functions";
+import { db, regionalFunctions } from "../../../firebase";
 import { Donation } from "../../../types/donation";
 
 type DonationType = "one-time" | "recurring";
@@ -36,7 +34,7 @@ export default function HistoryTab() {
     setHasLoaded(false);
 
     try {
-      const getUserDonations = httpsCallable(functions, "getUserDonations");
+      const getUserDonations = regionalFunctions.httpsCallable("getUserDonations");
       const result = await getUserDonations({ email: email.trim() });
       const data = result.data as any;
 
@@ -140,7 +138,7 @@ export default function HistoryTab() {
             {subscription.donation_type_label || "General Donation"}
           </Text>
           <Text style={styles.donationDate}>
-            {subscription.frequency || "Monthly"} •{" "}
+            {subscription.frequency || "Monthly"} • {" "}
             {subscription.status || "Active"}
           </Text>
         </View>

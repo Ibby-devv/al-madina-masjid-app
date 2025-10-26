@@ -1,7 +1,6 @@
-// masjid-app/hooks/useEventCategories.ts
+// masjid-app/hooks/useEventCategories.ts - React Native Firebase version
 
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { EventCategory, EventCategoriesConfig } from '../types';
 
@@ -23,41 +22,41 @@ export const useEventCategories = (): UseEventCategoriesReturn => {
       setError(null);
       
       // Real-time listener for event categories
-      const categoriesRef = doc(db, 'eventCategories', 'default');
-      
-      unsubscribe = onSnapshot(
-        categoriesRef,
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const data = docSnapshot.data() as EventCategoriesConfig;
-            
-            if (data.categories) {
-              // Filter active categories and sort by order
-              const activeCategories = data.categories
-                .filter((cat: EventCategory) => cat.is_active)
-                .sort((a: EventCategory, b: EventCategory) => a.order - b.order);
+      unsubscribe = db
+        .collection('eventCategories')
+        .doc('default')
+        .onSnapshot(
+          (docSnapshot) => {
+            if (docSnapshot.exists()) {
+              const data = docSnapshot.data() as EventCategoriesConfig;
               
-              setCategories(activeCategories);
-              console.log('Event categories loaded:', activeCategories.length);
+              if (data.categories) {
+                // Filter active categories and sort by order
+                const activeCategories = data.categories
+                  .filter((cat: EventCategory) => cat.is_active)
+                  .sort((a: EventCategory, b: EventCategory) => a.order - b.order);
+                
+                setCategories(activeCategories);
+                console.log('Event categories loaded:', activeCategories.length);
+              } else {
+                // Fallback to default categories
+                setCategories(getDefaultCategories());
+              }
             } else {
-              // Fallback to default categories
+              // Document doesn't exist, use defaults
+              console.warn('⚠️ No event categories found in Firestore, using defaults');
               setCategories(getDefaultCategories());
             }
-          } else {
-            // Document doesn't exist, use defaults
-            console.warn('⚠️ No event categories found in Firestore, using defaults');
-            setCategories(getDefaultCategories());
+            
+            setLoading(false);
+          },
+          (err) => {
+            console.error('Error listening to event categories:', err);
+            setError(err.message);
+            setCategories(getDefaultCategories()); // Fallback on error
+            setLoading(false);
           }
-          
-          setLoading(false);
-        },
-        (err) => {
-          console.error('Error listening to event categories:', err);
-          setError(err.message);
-          setCategories(getDefaultCategories()); // Fallback on error
-          setLoading(false);
-        }
-      );
+        );
     } catch (err) {
       console.error('Error setting up categories listener:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

@@ -1,12 +1,10 @@
 // ============================================================================
-// DONATION HOOK - USING YOUR FIREBASE CONFIG
+// DONATION HOOK - React Native Firebase version
 // Location: src/hooks/useDonation.ts
 // ============================================================================
 
 import { useState, useEffect } from 'react';
-import { httpsCallable } from 'firebase/functions';
-import { collection, query, where, orderBy, getDocs, onSnapshot, doc, getDoc } from 'firebase/firestore';
-import { db, functions } from '../firebase';
+import { db, regionalFunctions } from '../firebase';
 import { 
   DonationSettings, 
   DonationFormData, 
@@ -21,6 +19,9 @@ export const useDonation = () => {
   const [settings, setSettings] = useState<DonationSettings | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
 
+  // Get regional functions instance
+  const functions = regionalFunctions;
+
   // Load donation settings
   useEffect(() => {
     loadSettings();
@@ -28,7 +29,11 @@ export const useDonation = () => {
 
   const loadSettings = async () => {
     try {
-      const settingsDoc = await getDoc(doc(db, 'donationSettings', 'config'));
+      const settingsDoc = await db
+        .collection('donationSettings')
+        .doc('config')
+        .get();
+      
       if (settingsDoc.exists()) {
         setSettings(settingsDoc.data() as DonationSettings);
         console.log('✅ Donation settings loaded');
@@ -49,10 +54,7 @@ export const useDonation = () => {
     try {
       console.log('📤 Creating payment intent...');
       
-      const createPaymentIntent = httpsCallable<any, PaymentIntentResponse>(
-        functions,
-        'createPaymentIntent'
-      );
+      const createPaymentIntent = functions.httpsCallable('createPaymentIntent');
 
       const payload = {
         amount: Math.round(data.amount * 100), // Convert to cents
@@ -72,7 +74,7 @@ export const useDonation = () => {
       console.log('✅ Payment intent created:', result.data.paymentIntentId);
       
       setLoading(false);
-      return result.data;
+      return result.data as PaymentIntentResponse;
     } catch (err: any) {
       console.error('❌ Error creating payment intent:');
       console.error('   Code:', err.code);
@@ -111,10 +113,7 @@ export const useDonation = () => {
 
       console.log('📤 Creating subscription...');
 
-      const createSubscriptionFunc = httpsCallable<any, SubscriptionResponse>(
-        functions,
-        'createSubscription'
-      );
+      const createSubscriptionFunc = functions.httpsCallable('createSubscription');
 
       const payload = {
         amount: Math.round(data.amount * 100), // Convert to cents
@@ -134,7 +133,7 @@ export const useDonation = () => {
       console.log('✅ Subscription created:', result.data.subscriptionId);
 
       setLoading(false);
-      return result.data;
+      return result.data as SubscriptionResponse;
     } catch (err: any) {
       console.error('❌ Error creating subscription:');
       console.error('   Code:', err.code);
@@ -164,13 +163,12 @@ export const useDonation = () => {
   // Load user's donations (if authenticated)
   const loadUserDonations = async (email: string) => {
     try {
-      const q = query(
-        collection(db, 'donations'),
-        where('donor_email', '==', email),
-        orderBy('created_at', 'desc')
-      );
+      const snapshot = await db
+        .collection('donations')
+        .where('donor_email', '==', email)
+        .orderBy('created_at', 'desc')
+        .get();
 
-      const snapshot = await getDocs(q);
       const userDonations = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -184,20 +182,18 @@ export const useDonation = () => {
 
   // Subscribe to real-time donation updates
   const subscribeToDonations = (email: string) => {
-    const q = query(
-      collection(db, 'donations'),
-      where('donor_email', '==', email),
-      orderBy('created_at', 'desc')
-    );
+    return db
+      .collection('donations')
+      .where('donor_email', '==', email)
+      .orderBy('created_at', 'desc')
+      .onSnapshot((snapshot) => {
+        const userDonations = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Donation[];
 
-    return onSnapshot(q, (snapshot) => {
-      const userDonations = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Donation[];
-
-      setDonations(userDonations);
-    });
+        setDonations(userDonations);
+      });
   };
 
   return {

@@ -4,15 +4,12 @@
 import firestore from '@react-native-firebase/firestore';
 import functions from '@react-native-firebase/functions';
 
-// Firestore instance (auto-initialized, no config needed)
+// Firestore instance
 export const db = firestore();
 
-// Functions instance configured for Australia region
-const functionsInstance = functions();
-export const regionalFunctions = functionsInstance.app.functions('australia-southeast1');
-
-// For backwards compatibility, export functions instance
-export const functions = functionsInstance;
+// Functions instance for australia-southeast1 region
+// Correct syntax: functions().app.functions('region')
+export const regionalFunctions = functions().app.functions('australia-southeast1');
 
 // Note: React Native Firebase doesn't need explicit initialization
 // The native modules are configured via google-services.json
