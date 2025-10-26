@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 // Import custom components
 import LoadingScreen from '../../components/LoadingScreen';
@@ -181,12 +182,22 @@ export default function HomeScreen(): React.JSX.Element {
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.mosqueName}>
-            {mosqueSettings?.name || 'Al Ansar Masjid'}
-          </Text>
-          <Text style={styles.date}>
-            {formatDate(currentTime)} | {getIslamicDate(currentTime)}
-          </Text>
+          <View style={styles.headerContent}>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.mosqueName}>
+                {mosqueSettings?.name || 'Al Ansar Masjid'}
+              </Text>
+              <Text style={styles.date}>
+                {formatDate(currentTime)} | {getIslamicDate(currentTime)}
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.settingsButton}
+              onPress={() => router.push('/settings')}
+            >
+              <Ionicons name="settings-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
         {/* Toggle Buttons */}
         <View style={styles.toggleContainer}>
@@ -467,5 +478,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1e3a8a',
     fontWeight: '600',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
