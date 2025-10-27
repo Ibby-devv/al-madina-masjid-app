@@ -352,12 +352,15 @@ export default function HomeScreen(): React.JSX.Element {
         )}
 
         {/* Jumu'ah Times View */}
+        {/* Jumu'ah Times View */}
         {activeView === "jumuah" && jumuahTimes && (
           <View style={styles.jumuahTabContainer}>
             {jumuahTimes.times.map((time, index) => (
               <View key={time.id} style={styles.jumuahCard}>
                 <Text style={styles.jumuahCardTitle}>
-                  {getOrdinalSuffix(index + 1)} Jumu'ah
+                  {jumuahTimes.times.length === 1
+                    ? "Jumu'ah"
+                    : `${getOrdinalSuffix(index + 1)} Jumu'ah`}
                 </Text>
                 <View style={styles.jumuahTimeRow}>
                   <Text style={styles.jumuahLabel}>Khutbah</Text>
