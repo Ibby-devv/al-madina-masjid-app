@@ -29,11 +29,13 @@ export interface PrayerTimes {
   last_updated?: string;
 }
 
+export interface JumuahTime {
+  id: string;
+  khutbah: string;
+}
+
 export interface JumuahTimes {
-  first_khutbah: string;
-  first_prayer: string;
-  second_khutbah: string;
-  second_prayer: string;
+  times: JumuahTime[];
   last_updated?: string;
 }
 
