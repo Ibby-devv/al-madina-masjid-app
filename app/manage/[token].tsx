@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase';
+import { regionalFunctions } from '../../firebase'; // Use existing export
 import * as Linking from 'expo-linking';
 
 export default function VerifyTokenScreen() {
@@ -17,10 +16,8 @@ export default function VerifyTokenScreen() {
 
   const verifyToken = async () => {
     try {
-      const verifyManagementToken = httpsCallable(
-        functions,
-        'verifyManagementToken'
-      );
+      // Use regionalFunctions from firebase.ts
+      const verifyManagementToken = regionalFunctions.httpsCallable('verifyManagementToken');
 
       const result = await verifyManagementToken({ token });
       const data = result.data as any;
