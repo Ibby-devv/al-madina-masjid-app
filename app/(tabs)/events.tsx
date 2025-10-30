@@ -124,7 +124,7 @@ export default function EventsScreen(): React.JSX.Element {
   }, [sections]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
       {/* Header with Gradient */}
@@ -155,11 +155,10 @@ export default function EventsScreen(): React.JSX.Element {
       </LinearGradient>
 
       {/* Category Filter */}
-      <View style={styles.filterBar}>
+      <View style={styles.categoryFilterWrapper}>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false} 
-          style={styles.categoryFilter}
           contentContainerStyle={styles.categoryFilterContent}
         >
           {categoriesLoading ? (
@@ -282,7 +281,7 @@ export default function EventsScreen(): React.JSX.Element {
           />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -292,15 +291,10 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.surface.muted,
   },
   headerGradient: {
-    paddingTop: 12,
-    paddingBottom: 18,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    paddingBottom: Theme.spacing.xl,
+    borderBottomLeftRadius: Theme.radius.xl,
+    borderBottomRightRadius: Theme.radius.xl,
+    ...Theme.shadow.header,
   },
   patternOverlay: {
     position: 'absolute',
@@ -309,24 +303,21 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
-  filterBar: {
-    height: 56,
-    backgroundColor: Theme.colors.surface.soft,
-    justifyContent: 'center',
-  },
   headerContent: {
     alignItems: 'center',
-    paddingHorizontal: 16,
+  paddingHorizontal: Theme.spacing.lg,
+  paddingTop: Theme.spacing.md,
+  paddingBottom: Theme.spacing.sm,
   },
   headerTitle: {
-    fontSize: 22,
+  fontSize: 26,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 6,
     textAlign: 'center',
   },
   headerSubtitle: {
-    fontSize: 13,
+  fontSize: 16,
     color: '#cbd5e1',
     textAlign: 'center',
   },
@@ -335,15 +326,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  categoryFilter: {
-    backgroundColor: 'transparent',
-    height: '100%',
+  categoryFilterWrapper: {
+    backgroundColor: Theme.colors.surface.card,
+    marginHorizontal: Theme.spacing.lg,
+    borderRadius: Theme.radius.pill,
+    padding: 3,
+    marginTop: -12,
+    marginBottom: 12,
+    ...Theme.shadow.soft,
   },
   categoryFilterContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     alignItems: 'center',
-    flexGrow: 0,
+    gap: 6,
   },
   categoryButtonText: {
     fontSize: 13,

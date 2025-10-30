@@ -2,33 +2,33 @@
 // DONATION SCREEN - SIMPLIFIED WITH PAYMENT SHEET + CAMPAIGNS
 // ============================================================================
 
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
+import { useStripe } from "@stripe/stripe-react-native";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  TouchableOpacity,
-  TextInput,
-  Alert,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useStripe } from "@stripe/stripe-react-native";
-import { Picker } from "@react-native-picker/picker";
 
 // Import custom hooks
-import { useFirebaseData } from "../../../hooks/useFirebaseData";
-import { useDonation } from "../../../hooks/useDonation";
-import { DonationFormData } from "../../../types/donation";
-import { router } from "expo-router";
-import { useCampaigns, Campaign } from "../../../hooks/useCampaigns";
 import CampaignCard from "../../../components/CampaignCard";
 import GeneralDonationCard from "../../../components/GeneralDonationCard";
+import { Theme } from "../../../constants/theme";
+import { Campaign, useCampaigns } from "../../../hooks/useCampaigns";
+import { useDonation } from "../../../hooks/useDonation";
+import { useFirebaseData } from "../../../hooks/useFirebaseData";
+import { DonationFormData } from "../../../types/donation";
 
 export default function GiveTab(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
@@ -234,9 +234,9 @@ export default function GiveTab(): React.JSX.Element {
 
   if (!settings) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["bottom"]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1e3a8a" />
+          <ActivityIndicator size="large" color={Theme.colors.brand.navy[700]} />
           <Text style={styles.loadingText}>Loading donation options...</Text>
         </View>
       </SafeAreaView>
@@ -285,22 +285,34 @@ export default function GiveTab(): React.JSX.Element {
               <>
                 {/* Back button if came from campaigns */}
                 {showDonationForm && campaigns.length > 0 && (
-                  <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleBackToCampaigns}
-                  >
-                    <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
-                    <Text style={styles.backButtonText}>Back to Campaigns</Text>
-                  </TouchableOpacity>
+                  <View style={styles.backButtonContainer}>
+                    <TouchableOpacity
+                      style={styles.backButton}
+                      onPress={handleBackToCampaigns}
+                    >
+                      <View style={styles.backButtonContent}>
+                        <Ionicons name="arrow-back-circle" size={28} color={Theme.colors.brand.navy[700]} />
+                        <View>
+                          <Text style={styles.backButtonText}>Back to Campaigns</Text>
+                          <Text style={styles.backButtonSubtext}>Choose a different cause</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 )}
 
                 {/* Show selected campaign info if applicable */}
                 {selectedCampaign && (
                   <View style={styles.selectedCampaignBanner}>
-                    <Ionicons name="heart" size={20} color="#1e3a8a" />
-                    <Text style={styles.selectedCampaignText}>
-                      Donating to: {selectedCampaign.title}
-                    </Text>
+                    <View style={styles.campaignBannerIcon}>
+                      <Ionicons name="heart" size={20} color={Theme.colors.brand.navy[700]} />
+                    </View>
+                    <View style={styles.campaignBannerText}>
+                      <Text style={styles.campaignBannerLabel}>Donating to</Text>
+                      <Text style={styles.selectedCampaignText}>
+                        {selectedCampaign.title}
+                      </Text>
+                    </View>
                   </View>
                 )}
 
@@ -308,7 +320,10 @@ export default function GiveTab(): React.JSX.Element {
                 {/* Donation Type Dropdown */}
                 {!selectedCampaign && (
                   <View style={styles.section}>
-                    <Text style={styles.label}>Donation Type *</Text>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="list" size={20} color={Theme.colors.brand.navy[700]} />
+                      <Text style={styles.label}>Donation Type *</Text>
+                    </View>
                     <View style={styles.pickerContainer}>
                       <Picker
                         selectedValue={selectedType}
@@ -337,7 +352,10 @@ export default function GiveTab(): React.JSX.Element {
 
                 {/* Amount Selection */}
                 <View style={styles.section}>
-                  <Text style={styles.label}>Amount (AUD) *</Text>
+                  <View style={styles.sectionHeader}>
+                    <Ionicons name="cash" size={20} color={Theme.colors.brand.gold[600]} />
+                    <Text style={styles.label}>Amount (AUD) *</Text>
+                  </View>
                   <View style={styles.amountGrid}>
                     {settings.preset_amounts.map((presetAmount) => (
                       <TouchableOpacity
@@ -365,7 +383,7 @@ export default function GiveTab(): React.JSX.Element {
                   <TextInput
                     style={styles.input}
                     placeholder="Or enter custom amount"
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={Theme.colors.text.muted}
                     keyboardType="numeric"
                     value={customAmount}
                     onChangeText={handleCustomAmount}
@@ -373,51 +391,57 @@ export default function GiveTab(): React.JSX.Element {
                 </View>
 
                 {/* Recurring Toggle */}
-                <TouchableOpacity
-                  style={styles.checkboxRow}
-                  onPress={() => {
-                    const newValue = !isRecurring;
-                    setIsRecurring(newValue);
-                    if (newValue && isAnonymous) {
-                      setIsAnonymous(false); // Auto-uncheck anonymous
-                    }
-                  }}
-                >
-                  <Ionicons
-                    name={isRecurring ? "checkbox" : "square-outline"}
-                    size={24}
-                    color="#1e3a8a"
-                  />
-                  <Text style={styles.checkboxLabel}>Make this recurring</Text>
-                </TouchableOpacity>
+                <View style={styles.recurringSection}>
+                  <TouchableOpacity
+                    style={styles.checkboxRow}
+                    onPress={() => {
+                      const newValue = !isRecurring;
+                      setIsRecurring(newValue);
+                      if (newValue && isAnonymous) {
+                        setIsAnonymous(false); // Auto-uncheck anonymous
+                      }
+                    }}
+                  >
+                    <Ionicons
+                      name={isRecurring ? "checkbox" : "square-outline"}
+                      size={24}
+                      color={Theme.colors.brand.navy[700]}
+                    />
+                    <View style={styles.recurringLabelContainer}>
+                      <Text style={styles.checkboxLabel}>Make this recurring</Text>
+                      <Text style={styles.recurringSubtext}>Support us every month</Text>
+                    </View>
+                  </TouchableOpacity>
 
-                {isRecurring && (
-                  <View style={styles.frequencyRow}>
-                    {settings.recurring_frequencies
-                      .filter((freq) => freq.enabled)
-                      .map((freq) => (
-                        <TouchableOpacity
-                          key={freq.id}
-                          style={[
-                            styles.frequencyChip,
-                            frequency === freq.id &&
-                              styles.frequencyChipSelected,
-                          ]}
-                          onPress={() => setFrequency(freq.id as any)}
-                        >
-                          <Text
+                  {/* Inline Frequency Chips */}
+                  {isRecurring && (
+                    <View style={styles.frequencyRowInline}>
+                      {settings.recurring_frequencies
+                        .filter((freq) => freq.enabled)
+                        .map((freq) => (
+                          <TouchableOpacity
+                            key={freq.id}
                             style={[
-                              styles.frequencyChipText,
+                              styles.frequencyChipCompact,
                               frequency === freq.id &&
-                                styles.frequencyChipTextSelected,
+                                styles.frequencyChipSelected,
                             ]}
+                            onPress={() => setFrequency(freq.id as any)}
                           >
-                            {freq.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                  </View>
-                )}
+                            <Text
+                              style={[
+                                styles.frequencyChipText,
+                                frequency === freq.id &&
+                                  styles.frequencyChipTextSelected,
+                              ]}
+                            >
+                              {freq.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                    </View>
+                  )}
+                </View>
 
                 {/* Anonymous Toggle */}
                 <View style={styles.section}>
@@ -436,7 +460,7 @@ export default function GiveTab(): React.JSX.Element {
                     <Ionicons
                       name={isAnonymous ? "checkbox" : "square-outline"}
                       size={24}
-                      color="#1e3a8a"
+                      color={Theme.colors.brand.navy[700]}
                     />
                     <Text
                       style={[
@@ -453,12 +477,15 @@ export default function GiveTab(): React.JSX.Element {
                 {/* Donor Information */}
                 {(!isAnonymous || isRecurring) && (
                   <View style={styles.section}>
-                    <Text style={styles.label}>Your Information</Text>
+                    <View style={styles.sectionHeader}>
+                      <Ionicons name="person" size={20} color={Theme.colors.brand.navy[700]} />
+                      <Text style={styles.label}>Your Information</Text>
+                    </View>
 
                     <TextInput
                       style={styles.input}
                       placeholder="Full Name *"
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={Theme.colors.text.muted}
                       value={donorName}
                       onChangeText={setDonorName}
                       autoCapitalize="words"
@@ -467,7 +494,7 @@ export default function GiveTab(): React.JSX.Element {
                     <TextInput
                       style={styles.input}
                       placeholder={isRecurring ? "Email *" : "Email (optional)"}
-                      placeholderTextColor="#9ca3af"
+                      placeholderTextColor={Theme.colors.text.muted}
                       value={donorEmail}
                       onChangeText={setDonorEmail}
                       keyboardType="email-address"
@@ -479,7 +506,7 @@ export default function GiveTab(): React.JSX.Element {
                         <Ionicons
                           name="information-circle"
                           size={20}
-                          color="#1e3a8a"
+                          color={Theme.colors.brand.navy[700]}
                         />
                         <Text style={styles.infoText}>
                           Email required to manage your recurring donation
@@ -510,7 +537,7 @@ export default function GiveTab(): React.JSX.Element {
                       </View>
                     )}
                     <View style={styles.paymentMethodBadge}>
-                      <Ionicons name="card" size={20} color="#1e3a8a" />
+                      <Ionicons name="card" size={20} color={Theme.colors.brand.navy[700]} />
                       <Text style={styles.paymentMethodText}>Card</Text>
                     </View>
                   </View>
@@ -539,7 +566,7 @@ export default function GiveTab(): React.JSX.Element {
 
                 {/* Security Note */}
                 <View style={styles.securityNote}>
-                  <Ionicons name="shield-checkmark" size={20} color="#10b981" />
+                  <Ionicons name="shield-checkmark" size={20} color={Theme.colors.accent.green} />
                   <Text style={styles.securityText}>
                     Secure payment powered by Stripe
                   </Text>
@@ -556,84 +583,117 @@ export default function GiveTab(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Theme.colors.surface.muted,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Theme.colors.surface.muted,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#6b7280",
+    marginTop: Theme.spacing.lg,
+    fontSize: Theme.spacing.lg,
+    color: Theme.colors.text.muted,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 24,
+    paddingTop: Theme.spacing.xxl,
     paddingBottom: 40,
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 20,
+    backgroundColor: Theme.colors.surface.muted,
+    padding: Theme.spacing.xl,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    marginTop: -20,
+    marginTop: -Theme.spacing.xl,
   },
   sectionTitle: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#1f2937",
-    marginBottom: 20,
+    color: Theme.colors.text.strong,
+    marginBottom: Theme.spacing.xl,
+  },
+  backButtonContainer: {
+    marginBottom: Theme.spacing.xxl,
   },
   backButton: {
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    ...Theme.shadow.soft,
+  },
+  backButtonContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 20,
-    paddingVertical: 8,
+    gap: Theme.spacing.md,
   },
   backButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1e3a8a",
+    fontSize: Theme.spacing.lg,
+    fontWeight: "700",
+    color: Theme.colors.brand.navy[700],
+  },
+  backButtonSubtext: {
+    fontSize: Theme.typography.small,
+    color: Theme.colors.text.muted,
+    marginTop: 2,
   },
   selectedCampaignBanner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    backgroundColor: "#eff6ff",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 20,
+    gap: Theme.spacing.md,
+    backgroundColor: Theme.colors.accent.amberSoft,
+    padding: Theme.spacing.lg,
+    borderRadius: Theme.radius.md,
+    marginBottom: Theme.spacing.xxl,
     borderLeftWidth: 4,
-    borderLeftColor: "#1e3a8a",
+    borderLeftColor: Theme.colors.brand.gold[600],
+    ...Theme.shadow.soft,
+  },
+  campaignBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Theme.colors.surface.base,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  campaignBannerText: {
+    flex: 1,
+  },
+  campaignBannerLabel: {
+    fontSize: Theme.typography.small,
+    color: Theme.colors.text.muted,
+    marginBottom: 2,
   },
   selectedCampaignText: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1e3a8a",
+    fontSize: Theme.spacing.lg,
+    fontWeight: "700",
+    color: Theme.colors.brand.gold[600],
   },
   section: {
-    marginBottom: 24,
+    marginBottom: Theme.spacing.xxl,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
+    marginBottom: Theme.spacing.md,
   },
   label: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 8,
+    color: Theme.colors.text.strong,
   },
   pickerContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
     borderWidth: 2,
-    borderColor: "#e5e7eb",
+    borderColor: Theme.colors.border.base,
     overflow: "hidden",
   },
   picker: {
@@ -642,163 +702,174 @@ const styles = StyleSheet.create({
   amountGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 12,
+    gap: Theme.spacing.md,
+    marginBottom: Theme.spacing.md,
   },
   amountButton: {
     flex: 1,
     minWidth: "30%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#e5e7eb",
+    borderColor: Theme.colors.border.base,
   },
   amountButtonSelected: {
-    borderColor: "#1e3a8a",
-    backgroundColor: "#1e3a8a",
+    borderColor: Theme.colors.brand.navy[700],
+    backgroundColor: Theme.colors.brand.navy[700],
   },
   amountButtonText: {
-    fontSize: 18,
+    fontSize: Theme.typography.h3,
     fontWeight: "bold",
-    color: "#1f2937",
+    color: Theme.colors.text.strong,
   },
   amountButtonTextSelected: {
-    color: "#fff",
+    color: Theme.colors.text.inverse,
   },
   input: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#1f2937",
-    marginBottom: 12,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    fontSize: Theme.spacing.lg,
+    color: Theme.colors.text.strong,
+    marginBottom: Theme.spacing.md,
     borderWidth: 2,
-    borderColor: "#e5e7eb",
+    borderColor: Theme.colors.border.base,
   },
   checkboxRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: Theme.spacing.lg,
+  },
+  recurringSection: {
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xl,
+    ...Theme.shadow.soft,
+  },
+  recurringLabelContainer: {
+    flex: 1,
+  },
+  recurringSubtext: {
+    fontSize: Theme.typography.small,
+    color: Theme.colors.text.muted,
+    marginTop: 2,
   },
   checkboxLabel: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: "500",
-    color: "#1f2937",
-    marginLeft: 12,
+    color: Theme.colors.text.strong,
+    marginLeft: Theme.spacing.md,
   },
   frequencyRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 10,
-    marginBottom: 20,
+    marginBottom: Theme.spacing.xl,
     paddingLeft: 36,
   },
   frequencyChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#fff",
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.radius.pill,
+    backgroundColor: Theme.colors.surface.base,
     borderWidth: 2,
-    borderColor: "#e5e7eb",
+    borderColor: Theme.colors.border.base,
   },
   frequencyChipSelected: {
-    backgroundColor: "#eff6ff",
-    borderColor: "#1e3a8a",
+    backgroundColor: Theme.colors.accent.blueSoft,
+    borderColor: Theme.colors.brand.navy[700],
   },
   frequencyChipText: {
-    fontSize: 14,
+    fontSize: Theme.typography.body,
     fontWeight: "600",
-    color: "#6b7280",
+    color: Theme.colors.text.muted,
   },
   frequencyChipTextSelected: {
-    color: "#1e3a8a",
+    color: Theme.colors.brand.navy[700],
   },
   paymentMethodsInfo: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xl,
   },
   paymentMethodsTitle: {
-    fontSize: 14,
+    fontSize: Theme.typography.body,
     fontWeight: "600",
-    color: "#6b7280",
-    marginBottom: 12,
+    color: Theme.colors.text.muted,
+    marginBottom: Theme.spacing.md,
   },
   paymentMethodsIcons: {
     flexDirection: "row",
-    gap: 12,
+    gap: Theme.spacing.md,
   },
   paymentMethodBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#f9fafb",
-    borderRadius: 8,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    backgroundColor: Theme.colors.surface.soft,
+    borderRadius: Theme.radius.sm,
   },
   paymentMethodText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#1f2937",
+    color: Theme.colors.text.strong,
   },
   donateButton: {
-    backgroundColor: "#1e3a8a",
-    borderRadius: 12,
-    padding: 18,
+    backgroundColor: Theme.colors.brand.navy[700],
+    borderRadius: Theme.radius.md,
+    padding: Theme.typography.h3,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
-    shadowColor: "#1e3a8a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    gap: Theme.spacing.md,
+    ...Theme.shadow.header,
   },
   donateButtonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: Theme.colors.text.muted,
     shadowOpacity: 0,
     elevation: 0,
   },
   donateButtonText: {
-    color: "#fff",
-    fontSize: 18,
+    color: Theme.colors.text.inverse,
+    fontSize: Theme.typography.h3,
     fontWeight: "bold",
   },
   securityNote: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
+    gap: Theme.spacing.sm,
+    marginTop: Theme.spacing.lg,
   },
   securityText: {
-    fontSize: 14,
-    color: "#6b7280",
+    fontSize: Theme.typography.body,
+    color: Theme.colors.text.muted,
   },
   checkboxRowDisabled: {
     opacity: 0.5,
   },
   checkboxLabelDisabled: {
-    color: "#9ca3af",
+    color: Theme.colors.text.muted,
   },
   infoBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#eff6ff",
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-    marginTop: 8,
+    backgroundColor: Theme.colors.accent.blueSoft,
+    padding: Theme.spacing.md,
+    borderRadius: Theme.radius.sm,
+    gap: Theme.spacing.sm,
+    marginTop: Theme.spacing.sm,
   },
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: "#1e3a8a",
+    color: Theme.colors.brand.navy[700],
     lineHeight: 18,
   },
 });

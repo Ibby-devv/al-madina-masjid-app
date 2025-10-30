@@ -1,16 +1,18 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
-  Alert,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { db, regionalFunctions } from "../../../firebase";
+import PillToggle from "../../../components/ui/PillToggle";
+import { Theme } from "../../../constants/theme";
+import { regionalFunctions } from "../../../firebase";
 import { Donation } from "../../../types/donation";
 
 type DonationType = "one-time" | "recurring";
@@ -221,40 +223,15 @@ export default function HistoryTab() {
             </View>
 
             {/* Tab Switcher */}
-            <View style={styles.tabSwitcher}>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "one-time" && styles.tabButtonActive,
-                ]}
-                onPress={() => setActiveTab("one-time")}
-              >
-                <Text
-                  style={[
-                    styles.tabButtonText,
-                    activeTab === "one-time" && styles.tabButtonTextActive,
-                  ]}
-                >
-                  One-Time ({donations.length})
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.tabButton,
-                  activeTab === "recurring" && styles.tabButtonActive,
-                ]}
-                onPress={() => setActiveTab("recurring")}
-              >
-                <Text
-                  style={[
-                    styles.tabButtonText,
-                    activeTab === "recurring" && styles.tabButtonTextActive,
-                  ]}
-                >
-                  Recurring ({subscriptions.length})
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <PillToggle
+              options={[
+                { key: "one-time", label: `One-Time (${donations.length})` },
+                { key: "recurring", label: `Recurring (${subscriptions.length})` },
+              ]}
+              value={activeTab}
+              onChange={(key) => setActiveTab(key as DonationType)}
+              style={{ marginBottom: Theme.spacing.lg }}
+            />
 
             {/* Donations List */}
             <View style={styles.donationsList}>
@@ -296,146 +273,142 @@ export default function HistoryTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Theme.colors.surface.muted,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: Theme.spacing.xl,
     paddingBottom: 40,
   },
   inputSection: {
-    marginBottom: 20,
+    marginBottom: Theme.spacing.xl,
   },
   infoCard: {
     flexDirection: "row",
-    backgroundColor: "#eff6ff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    gap: 12,
+    backgroundColor: Theme.colors.accent.blueSoft,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xxl,
+    gap: Theme.spacing.md,
   },
   infoText: {
     flex: 1,
-    fontSize: 14,
-    color: "#1e3a8a",
+    fontSize: Theme.typography.body,
+    color: Theme.colors.brand.navy[700],
     lineHeight: 20,
   },
   label: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: "600",
-    color: "#1f2937",
-    marginBottom: 8,
+    color: Theme.colors.text.strong,
+    marginBottom: Theme.spacing.sm,
   },
   input: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: "#1f2937",
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    fontSize: Theme.spacing.lg,
+    color: Theme.colors.text.strong,
     borderWidth: 2,
-    borderColor: "#e5e7eb",
-    marginBottom: 16,
+    borderColor: Theme.colors.border.base,
+    marginBottom: Theme.spacing.lg,
   },
   loadButton: {
-    backgroundColor: "#1e3a8a",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: Theme.colors.brand.navy[700],
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   loadButtonDisabled: {
-    backgroundColor: "#9ca3af",
+    backgroundColor: Theme.colors.text.muted,
   },
   loadButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: Theme.colors.text.inverse,
+    fontSize: Theme.spacing.lg,
     fontWeight: "600",
   },
   emailDisplay: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.lg,
   },
   emailInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Theme.spacing.sm,
     flex: 1,
   },
   emailText: {
-    fontSize: 14,
-    color: "#1f2937",
+    fontSize: Theme.typography.body,
+    color: Theme.colors.text.strong,
     fontWeight: "500",
   },
   changeButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: Theme.spacing.md,
     paddingVertical: 6,
-    backgroundColor: "#eff6ff",
+    backgroundColor: Theme.colors.accent.blueSoft,
     borderRadius: 6,
   },
   changeButtonText: {
-    color: "#1e3a8a",
-    fontSize: 14,
+    color: Theme.colors.brand.navy[700],
+    fontSize: Theme.typography.body,
     fontWeight: "600",
   },
   tabSwitcher: {
     flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: Theme.spacing.lg,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: Theme.spacing.md,
     alignItems: "center",
-    borderRadius: 8,
+    borderRadius: Theme.radius.sm,
   },
   tabButtonActive: {
-    backgroundColor: "#1e3a8a",
+    backgroundColor: Theme.colors.brand.navy[700],
   },
   tabButtonText: {
-    fontSize: 14,
+    fontSize: Theme.typography.body,
     fontWeight: "600",
-    color: "#6b7280",
+    color: Theme.colors.text.muted,
   },
   tabButtonTextActive: {
-    color: "#fff",
+    color: Theme.colors.text.inverse,
   },
   donationsList: {
-    gap: 12,
+    gap: Theme.spacing.md,
   },
   donationCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    ...Theme.shadow.soft,
   },
   donationHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: Theme.spacing.md,
   },
   donationIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#eff6ff",
+    backgroundColor: Theme.colors.accent.blueSoft,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
+    marginRight: Theme.spacing.md,
   },
   recurringIcon: {
     backgroundColor: "#d1fae5",
@@ -444,41 +417,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   donationType: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: "600",
-    color: "#1f2937",
+    color: Theme.colors.text.strong,
     marginBottom: 4,
   },
   donationDate: {
-    fontSize: 14,
-    color: "#6b7280",
+    fontSize: Theme.typography.body,
+    color: Theme.colors.text.muted,
   },
   donationAmount: {
-    fontSize: 20,
+    fontSize: Theme.typography.h2,
     fontWeight: "bold",
-    color: "#1e3a8a",
+    color: Theme.colors.brand.navy[700],
   },
   receiptRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingTop: 12,
+    paddingTop: Theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: Theme.colors.surface.soft,
   },
   receiptText: {
     fontSize: 13,
-    color: "#6b7280",
+    color: Theme.colors.text.muted,
   },
   subscriptionBadge: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: Theme.spacing.md,
+    paddingTop: Theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: Theme.colors.surface.soft,
   },
   subscriptionBadgeText: {
     fontSize: 13,
-    color: "#059669",
+    color: Theme.colors.accent.green,
     fontWeight: "600",
   },
   emptyState: {
@@ -486,8 +459,8 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
   },
   emptyText: {
-    fontSize: 16,
-    color: "#9ca3af",
-    marginTop: 12,
+    fontSize: Theme.spacing.lg,
+    color: Theme.colors.text.muted,
+    marginTop: Theme.spacing.md,
   },
 });
