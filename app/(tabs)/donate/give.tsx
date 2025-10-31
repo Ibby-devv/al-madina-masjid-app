@@ -7,17 +7,17 @@ import { Picker } from "@react-native-picker/picker";
 import { useStripe } from "@stripe/stripe-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -157,7 +157,7 @@ export default function GiveTab(): React.JSX.Element {
           name: isAnonymous ? "Anonymous" : donorName.trim(),
           email: donorEmail.trim() || undefined,
         },
-        returnURL: "almadina://payment-complete",
+        returnURL: "alansar://payment-complete",
       });
 
       if (initError) {
