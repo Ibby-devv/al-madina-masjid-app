@@ -1,7 +1,7 @@
-import notifee, { AndroidImportance } from '@notifee/react-native';
 import auth from '@react-native-firebase/auth';
 import messaging from '@react-native-firebase/messaging';
 import { db } from '../firebase';
+import NotificationService from './NotificationService';
 
 class FCMService {
   /**
@@ -60,27 +60,11 @@ class FCMService {
     try {
       console.log('📱 Requesting notification permission...');
       
-      const settings = await notifee.requestPermission();
-      console.log('Permission settings:', settings);
-      
-      // On Android: authorizationStatus 1 = GRANTED
-      // On iOS: authorizationStatus 2 = AUTHORIZED, 3 = PROVISIONAL
-      const isGranted = 
-        settings.authorizationStatus === 1 || // Android granted
-        settings.authorizationStatus >= 2;     // iOS authorized/provisional
+      // Use NotificationService to request permission and initialize channels
+      const isGranted = await NotificationService.requestPermission();
       
       if (isGranted) {
-        console.log('✅ Notification permission granted');
-        
-        // Create notification channel for Android
-        await notifee.createChannel({
-          id: 'default',
-          name: 'Al-Ansar Notifications',
-          importance: AndroidImportance.HIGH,
-          description: 'Notifications for events, campaigns, and prayer times',
-        });
-        
-        console.log('✅ Notification channel created');
+        console.log('✅ Notification permission granted and channels initialized');
         return true;
       } else {
         console.log('⚠️ Notification permission denied');
@@ -147,19 +131,39 @@ class FCMService {
     messaging().onMessage(async (remoteMessage) => {
       console.log('📬 Foreground notification received:', remoteMessage);
       
-      // Display notification using Notifee when app is in foreground
-      await notifee.displayNotification({
-        title: remoteMessage.notification?.title || 'Al-Ansar Masjid',
-        body: remoteMessage.notification?.body || '',
-        android: {
-          channelId: 'default',
-          importance: AndroidImportance.HIGH,
-          pressAction: {
-            id: 'default',
-          },
-        },
-        data: remoteMessage.data,
-      });
+      const title = remoteMessage.notification?.title || 'Al-Ansar Masjid';
+      const body = remoteMessage.notification?.body || '';
+      const data = remoteMessage.data;
+
+      // Determine channel based on notification type from data
+      const notificationType = data?.type as string | undefined;
+      
+      try {
+        switch (notificationType) {
+          case 'prayer':
+            await NotificationService.displayPrayerNotification(title, body, data);
+            break;
+          case 'event':
+            await NotificationService.displayEventNotification(title, body, data);
+            break;
+          case 'campaign':
+            await NotificationService.displayCampaignNotification(title, body, data);
+            break;
+          case 'urgent':
+            await NotificationService.displayUrgentNotification(title, body, data);
+            break;
+          default:
+            // General notification
+            await NotificationService.displayNotification({
+              title,
+              body,
+              channelId: 'general',
+              data,
+            });
+        }
+      } catch (error) {
+        console.error('❌ Error displaying foreground notification:', error);
+      }
     });
 
     console.log('✅ Foreground notification handler setup');
@@ -176,24 +180,14 @@ class FCMService {
    * Check if notifications are enabled (permission granted)
    */
   async areNotificationsEnabled(): Promise<boolean> {
-    try {
-      const settings = await notifee.getNotificationSettings();
-      return settings.authorizationStatus === 1 || settings.authorizationStatus >= 2;
-    } catch (error) {
-      console.error('Error checking notification settings:', error);
-      return false;
-    }
+    return NotificationService.areNotificationsEnabled();
   }
 
   /**
    * Open notification settings (for when user needs to manually enable)
    */
   async openSettings() {
-    try {
-      await notifee.openNotificationSettings();
-    } catch (error) {
-      console.error('Error opening notification settings:', error);
-    }
+    return NotificationService.openSettings();
   }
 }
 
