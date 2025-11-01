@@ -1,7 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import PatternOverlay from '../../components/PatternOverlay';
+import { Theme } from '../../constants/theme';
 
 // Import custom hooks
 import { useFirebaseData } from '../../hooks/useFirebaseData';
@@ -10,18 +13,34 @@ export default function LearnScreen(): React.JSX.Element {
   const { mosqueSettings } = useFirebaseData();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            {mosqueSettings?.name || 'Al Madina Masjid Yagoona'}
-          </Text>
-          <Text style={styles.headerSubtitle}>Islamic Resources</Text>
-        </View>
 
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[Theme.colors.brand.navy[800], Theme.colors.brand.navy[700], Theme.colors.brand.navy[900]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <PatternOverlay
+          style={styles.patternOverlay}
+          variant="stars"
+          opacity={0.05}
+          tileSize={28}
+          color="rgba(255,255,255,0.7)"
+        />
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>
+              {mosqueSettings?.name || 'Al Madina Masjid Yagoona'}
+            </Text>
+            <Text style={styles.headerSubtitle}>Islamic Resources</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Coming Soon Content */}
         <View style={styles.contentContainer}>
           <View style={styles.iconContainer}>
@@ -31,7 +50,7 @@ export default function LearnScreen(): React.JSX.Element {
           <Text style={styles.comingSoonTitle}>Learning Resources Coming Soon</Text>
           
           <Text style={styles.comingSoonText}>
-            We're building a comprehensive Islamic learning center with resources to help you in your daily worship.
+            We&#39;re building a comprehensive Islamic learning center with resources to help you in your daily worship.
           </Text>
 
           <View style={styles.featuresList}>
@@ -71,19 +90,32 @@ export default function LearnScreen(): React.JSX.Element {
             <Ionicons name="information-circle" size={32} color="#1e3a8a" />
             <Text style={styles.infoTitle}>Coming in Next Update</Text>
             <Text style={styles.infoText}>
-              We're working hard to bring you these features. Stay tuned for updates!
+              We&#39;re working hard to bring you these features. Stay tuned for updates!
             </Text>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e3a8a',
+    backgroundColor: Theme.colors.surface.muted,
+  },
+  headerGradient: {
+    paddingBottom: Theme.spacing.xl,
+    borderBottomLeftRadius: Theme.radius.xl,
+    borderBottomRightRadius: Theme.radius.xl,
+    ...Theme.shadow.header,
+  },
+  patternOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   scrollView: {
     flex: 1,
@@ -92,31 +124,30 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    backgroundColor: '#1e3a8a',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 15,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: Theme.spacing.md,
+    paddingBottom: Theme.spacing.sm,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+    color: Theme.colors.text.inverse,
+    marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#93c5fd',
+    color: Theme.colors.text.subtle,
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    backgroundColor: Theme.colors.surface.muted,
+    padding: Theme.spacing.lg,
     alignItems: 'center',
   },
   iconContainer: {
-    marginTop: 40,
-    marginBottom: 20,
+    marginTop: Theme.spacing.xl,
+    marginBottom: Theme.spacing.lg,
   },
   comingSoonTitle: {
     fontSize: 24,

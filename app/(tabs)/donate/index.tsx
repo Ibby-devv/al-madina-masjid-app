@@ -1,9 +1,12 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 // Import tab components
+import PatternOverlay from '../../../components/PatternOverlay';
+import PillToggle from '../../../components/ui/PillToggle';
+import { Theme } from '../../../constants/theme';
 import GiveTab from './give';
 import HistoryTab from './history';
 import ManageTab from './manage';
@@ -14,60 +17,42 @@ export default function DonateIndex() {
   const [activeTab, setActiveTab] = useState<TabType>('give');
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Ionicons name="heart" size={32} color="#fff" />
-        <Text style={styles.headerTitle}>Donate</Text>
-        <Text style={styles.headerSubtitle}>Support Al Ansar</Text>
-      </View>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[Theme.colors.brand.navy[800], Theme.colors.brand.navy[700], Theme.colors.brand.navy[900]]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <PatternOverlay
+          style={styles.patternOverlay}
+          variant="stars"
+          opacity={0.05}
+          tileSize={28}
+          color="rgba(255,255,255,0.7)"
+        />
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Donate</Text>
+            <Text style={styles.headerSubtitle}>Support Al Ansar</Text>
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
 
-      {/* Custom Tab Bar */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'give' && styles.tabActive]}
-          onPress={() => setActiveTab('give')}
-        >
-          <Ionicons 
-            name="heart" 
-            size={20} 
-            color={activeTab === 'give' ? '#1e3a8a' : '#9ca3af'} 
-          />
-          <Text style={[styles.tabText, activeTab === 'give' && styles.tabTextActive]}>
-            Give
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'history' && styles.tabActive]}
-          onPress={() => setActiveTab('history')}
-        >
-          <Ionicons 
-            name="list" 
-            size={20} 
-            color={activeTab === 'history' ? '#1e3a8a' : '#9ca3af'} 
-          />
-          <Text style={[styles.tabText, activeTab === 'history' && styles.tabTextActive]}>
-            History
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'manage' && styles.tabActive]}
-          onPress={() => setActiveTab('manage')}
-        >
-          <Ionicons 
-            name="settings" 
-            size={20} 
-            color={activeTab === 'manage' ? '#1e3a8a' : '#9ca3af'} 
-          />
-          <Text style={[styles.tabText, activeTab === 'manage' && styles.tabTextActive]}>
-            Manage
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {/* Tab Bar */}
+      <PillToggle
+        options={[
+          { key: 'give', label: 'Give' },
+          { key: 'history', label: 'History' },
+          { key: 'manage', label: 'Manage' },
+        ]}
+        value={activeTab}
+        onChange={(key) => setActiveTab(key as TabType)}
+        style={{ marginTop: -12, marginBottom: 12 }}
+      />
 
       {/* Tab Content */}
       <View style={styles.content}>
@@ -75,66 +60,46 @@ export default function DonateIndex() {
         {activeTab === 'history' && <HistoryTab />}
         {activeTab === 'manage' && <ManageTab />}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e3a8a',
+    backgroundColor: Theme.colors.surface.muted,
+  },
+  headerGradient: {
+    paddingBottom: Theme.spacing.xl,
+    borderBottomLeftRadius: Theme.radius.xl,
+    borderBottomRightRadius: Theme.radius.xl,
+    ...Theme.shadow.header,
+  },
+  patternOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
   },
   header: {
-    backgroundColor: '#1e3a8a',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: Theme.spacing.md,
+    paddingBottom: Theme.spacing.sm,
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 12,
-    marginBottom: 5,
+    color: Theme.colors.text.inverse,
+    marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#93c5fd',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: '#1e3a8a',
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#9ca3af',
-    marginTop: 4,
-  },
-  tabTextActive: {
-    color: '#1e3a8a',
+    color: Theme.colors.text.subtle,
   },
   content: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Theme.colors.surface.muted,
   },
 });

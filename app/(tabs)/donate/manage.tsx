@@ -1,15 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
   ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Theme } from '../../../constants/theme';
 import { regionalFunctions } from '../../../firebase';
 
 export default function ManageTab() {
@@ -27,8 +28,7 @@ export default function ManageTab() {
     try {
       const requestManagementLink = regionalFunctions.httpsCallable('requestManagementLink');
 
-      const result = await requestManagementLink({ email: email.trim() });
-      const data = result.data as any;
+      await requestManagementLink({ email: email.trim() });
 
       Alert.alert(
         'Check Your Email! 📧',
@@ -53,10 +53,10 @@ export default function ManageTab() {
       >
         {/* Info Card */}
         <View style={styles.infoCard}>
-          <Ionicons name="information-circle" size={24} color="#1e3a8a" />
+          <Ionicons name="information-circle" size={24} color={Theme.colors.brand.navy[700]} />
           <Text style={styles.infoText}>
             Enter the email address you used when setting up your recurring donation.
-            We'll send you a secure link to manage your subscriptions.
+            We&apos;ll send you a secure link to manage your subscriptions.
           </Text>
         </View>
 
@@ -96,34 +96,34 @@ export default function ManageTab() {
           <Text style={styles.featuresTitle}>What you can do:</Text>
           
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={20} color={Theme.colors.accent.green} />
             <Text style={styles.featureText}>View all recurring donations</Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={20} color={Theme.colors.accent.green} />
             <Text style={styles.featureText}>Cancel subscriptions</Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={20} color={Theme.colors.accent.green} />
             <Text style={styles.featureText}>Update payment method</Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={20} color={Theme.colors.accent.green} />
             <Text style={styles.featureText}>View payment history</Text>
           </View>
 
           <View style={styles.featureItem}>
-            <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={20} color={Theme.colors.accent.green} />
             <Text style={styles.featureText}>Download receipts</Text>
           </View>
         </View>
 
         {/* Security Note */}
         <View style={styles.securityNote}>
-          <Ionicons name="shield-checkmark" size={20} color="#10b981" />
+          <Ionicons name="shield-checkmark" size={20} color={Theme.colors.accent.green} />
           <Text style={styles.securityText}>
             Secure management powered by Stripe
           </Text>
@@ -136,95 +136,95 @@ export default function ManageTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Theme.colors.surface.muted,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: Theme.spacing.xl,
     paddingBottom: 40,
   },
   infoCard: {
     flexDirection: 'row',
-    backgroundColor: '#eff6ff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    gap: 12,
+    backgroundColor: Theme.colors.accent.blueSoft,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xxl,
+    gap: Theme.spacing.md,
   },
   infoText: {
     flex: 1,
-    fontSize: 14,
-    color: '#1e3a8a',
+    fontSize: Theme.typography.body,
+    color: Theme.colors.brand.navy[700],
     lineHeight: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: Theme.spacing.xxl,
   },
   label: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
+    color: Theme.colors.text.strong,
+    marginBottom: Theme.spacing.sm,
   },
   input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#1f2937',
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    fontSize: Theme.spacing.lg,
+    color: Theme.colors.text.strong,
     borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderColor: Theme.colors.border.base,
   },
   sendButton: {
-    backgroundColor: '#1e3a8a',
-    borderRadius: 12,
-    padding: 18,
+    backgroundColor: Theme.colors.brand.navy[700],
+    borderRadius: Theme.radius.md,
+    padding: Theme.typography.h3,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: Theme.spacing.md,
     marginBottom: 32,
   },
   sendButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: Theme.colors.text.muted,
   },
   sendButtonText: {
-    color: '#fff',
-    fontSize: 18,
+    color: Theme.colors.text.inverse,
+    fontSize: Theme.typography.h3,
     fontWeight: 'bold',
   },
   featuresSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.xl,
+    marginBottom: Theme.spacing.xl,
   },
   featuresTitle: {
-    fontSize: 16,
+    fontSize: Theme.spacing.lg,
     fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 16,
+    color: Theme.colors.text.strong,
+    marginBottom: Theme.spacing.lg,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    gap: Theme.spacing.md,
+    marginBottom: Theme.spacing.md,
   },
   featureText: {
     fontSize: 15,
-    color: '#1f2937',
+    color: Theme.colors.text.strong,
   },
   securityNote: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   securityText: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: Theme.typography.body,
+    color: Theme.colors.text.muted,
   },
 });
