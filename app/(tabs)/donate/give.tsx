@@ -5,7 +5,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useStripe } from "@stripe/stripe-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
@@ -46,10 +46,14 @@ export default function GiveTab(): React.JSX.Element {
   const [showDonationForm, setShowDonationForm] = useState(false);
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState<
     "weekly" | "fortnightly" | "monthly" | "yearly"
   >("monthly");
+
+  // Ref for custom amount input
+  const customAmountInputRef = useRef<TextInput>(null);
 
   // Donor info
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -73,11 +77,21 @@ export default function GiveTab(): React.JSX.Element {
   const handlePresetAmount = (value: number) => {
     setAmount(value.toString());
     setCustomAmount("");
+    setShowCustomInput(false);
   };
 
   const handleCustomAmount = (text: string) => {
     setCustomAmount(text);
     setAmount("");
+  };
+
+  const handleCustomAmountButtonPress = () => {
+    setShowCustomInput(true);
+    setAmount("");
+    // Focus the input after a short delay to ensure it's rendered
+    setTimeout(() => {
+      customAmountInputRef.current?.focus();
+    }, 100);
   };
 
   const getDisplayAmount = (): number => {
@@ -193,6 +207,7 @@ export default function GiveTab(): React.JSX.Element {
               // Reset form
               setAmount("");
               setCustomAmount("");
+              setShowCustomInput(false);
               setDonorName("");
               setDonorEmail("");
               setIsAnonymous(false);
@@ -226,6 +241,7 @@ export default function GiveTab(): React.JSX.Element {
     // Reset form
     setAmount("");
     setCustomAmount("");
+    setShowCustomInput(false);
     setDonorName("");
     setDonorEmail("");
     setIsAnonymous(false);
@@ -380,14 +396,27 @@ export default function GiveTab(): React.JSX.Element {
                     ))}
                   </View>
 
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Or enter custom amount"
-                    placeholderTextColor={Theme.colors.text.muted}
-                    keyboardType="numeric"
-                    value={customAmount}
-                    onChangeText={handleCustomAmount}
-                  />
+                  {!showCustomInput ? (
+                    <TouchableOpacity
+                      style={styles.customAmountButton}
+                      onPress={handleCustomAmountButtonPress}
+                    >
+                      <Ionicons name="create-outline" size={20} color={Theme.colors.brand.navy[700]} />
+                      <Text style={styles.customAmountButtonText}>
+                        Enter custom amount
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TextInput
+                      ref={customAmountInputRef}
+                      style={styles.input}
+                      placeholder="Enter custom amount"
+                      placeholderTextColor={Theme.colors.text.muted}
+                      keyboardType="numeric"
+                      value={customAmount}
+                      onChangeText={handleCustomAmount}
+                    />
+                  )}
                 </View>
 
                 {/* Recurring Toggle */}
@@ -407,44 +436,44 @@ export default function GiveTab(): React.JSX.Element {
                       size={24}
                       color={Theme.colors.brand.navy[700]}
                     />
-                    <View style={styles.recurringLabelContainer}>
-                      <Text style={styles.checkboxLabel}>Make this recurring</Text>
-                      <Text style={styles.recurringSubtext}>Support us every month</Text>
-                    </View>
+                    <Text style={styles.checkboxLabel}>Make this recurring</Text>
                   </TouchableOpacity>
 
-                  {/* Inline Frequency Chips */}
+                  {/* Frequency Buttons */}
                   {isRecurring && (
-                    <View style={styles.frequencyRowInline}>
-                      {settings.recurring_frequencies
-                        .filter((freq) => freq.enabled)
-                        .map((freq) => (
-                          <TouchableOpacity
-                            key={freq.id}
-                            style={[
-                              styles.frequencyChipCompact,
-                              frequency === freq.id &&
-                                styles.frequencyChipSelected,
-                            ]}
-                            onPress={() => setFrequency(freq.id as any)}
-                          >
-                            <Text
+                    <View style={styles.frequencyButtonsContainer}>
+                      <Text style={styles.frequencyLabel}>Choose frequency:</Text>
+                      <View style={styles.frequencyButtonsGrid}>
+                        {settings.recurring_frequencies
+                          .filter((freq) => freq.enabled)
+                          .map((freq) => (
+                            <TouchableOpacity
+                              key={freq.id}
                               style={[
-                                styles.frequencyChipText,
+                                styles.frequencyButton,
                                 frequency === freq.id &&
-                                  styles.frequencyChipTextSelected,
+                                  styles.frequencyButtonSelected,
                               ]}
+                              onPress={() => setFrequency(freq.id as any)}
                             >
-                              {freq.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
+                              <Text
+                                style={[
+                                  styles.frequencyButtonText,
+                                  frequency === freq.id &&
+                                    styles.frequencyButtonTextSelected,
+                                ]}
+                              >
+                                {freq.label}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                      </View>
                     </View>
                   )}
                 </View>
 
                 {/* Anonymous Toggle */}
-                <View style={styles.section}>
+                <View style={styles.anonymousSection}>
                   <TouchableOpacity
                     style={[
                       styles.checkboxRow,
@@ -476,7 +505,7 @@ export default function GiveTab(): React.JSX.Element {
 
                 {/* Donor Information */}
                 {(!isAnonymous || isRecurring) && (
-                  <View style={styles.section}>
+                  <View style={styles.donorInfoSection}>
                     <View style={styles.sectionHeader}>
                       <Ionicons name="person" size={20} color={Theme.colors.brand.navy[700]} />
                       <Text style={styles.label}>Your Information</Text>
@@ -740,7 +769,7 @@ const styles = StyleSheet.create({
   checkboxRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Theme.spacing.lg,
+    gap: Theme.spacing.md,
   },
   recurringSection: {
     backgroundColor: Theme.colors.surface.base,
@@ -749,46 +778,64 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.xl,
     ...Theme.shadow.soft,
   },
-  recurringLabelContainer: {
-    flex: 1,
+  anonymousSection: {
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xl,
+    ...Theme.shadow.soft,
   },
-  recurringSubtext: {
-    fontSize: Theme.typography.small,
-    color: Theme.colors.text.muted,
-    marginTop: 2,
+  donorInfoSection: {
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    marginBottom: Theme.spacing.xl,
+    ...Theme.shadow.soft,
   },
   checkboxLabel: {
     fontSize: Theme.spacing.lg,
-    fontWeight: "500",
+    fontWeight: "600",
     color: Theme.colors.text.strong,
-    marginLeft: Theme.spacing.md,
   },
-  frequencyRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: Theme.spacing.xl,
-    paddingLeft: 36,
+  frequencyButtonsContainer: {
+    marginTop: Theme.spacing.lg,
+    paddingTop: Theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.border.base,
   },
-  frequencyChip: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.sm,
-    borderRadius: Theme.radius.pill,
-    backgroundColor: Theme.colors.surface.base,
-    borderWidth: 2,
-    borderColor: Theme.colors.border.base,
-  },
-  frequencyChipSelected: {
-    backgroundColor: Theme.colors.accent.blueSoft,
-    borderColor: Theme.colors.brand.navy[700],
-  },
-  frequencyChipText: {
+  frequencyLabel: {
     fontSize: Theme.typography.body,
     fontWeight: "600",
     color: Theme.colors.text.muted,
+    marginBottom: Theme.spacing.md,
   },
-  frequencyChipTextSelected: {
+  frequencyButtonsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Theme.spacing.md,
+  },
+  frequencyButton: {
+    flex: 1,
+    minWidth: "45%",
+    backgroundColor: Theme.colors.surface.muted,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: Theme.colors.border.base,
+  },
+  frequencyButtonSelected: {
+    backgroundColor: Theme.colors.accent.blueSoft,
+    borderColor: Theme.colors.brand.navy[700],
+  },
+  frequencyButtonText: {
+    fontSize: Theme.spacing.lg,
+    fontWeight: "600",
+    color: Theme.colors.text.strong,
+  },
+  frequencyButtonTextSelected: {
     color: Theme.colors.brand.navy[700],
+    fontWeight: "700",
   },
   paymentMethodsInfo: {
     backgroundColor: Theme.colors.surface.base,
@@ -871,5 +918,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: Theme.colors.brand.navy[700],
     lineHeight: 18,
+  },
+  customAmountButton: {
+    backgroundColor: Theme.colors.surface.base,
+    borderRadius: Theme.radius.md,
+    padding: Theme.spacing.lg,
+    borderWidth: 2,
+    borderColor: Theme.colors.border.base,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Theme.spacing.sm,
+  },
+  customAmountButtonText: {
+    fontSize: Theme.spacing.lg,
+    fontWeight: "600",
+    color: Theme.colors.brand.navy[700],
   },
 });
