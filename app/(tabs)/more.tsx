@@ -148,7 +148,7 @@ export default function MoreScreen(): React.JSX.Element {
         <SafeAreaView edges={['top']}>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>
-              {mosqueSettings?.name || 'Al Madina Masjid Yagoona'}
+              {mosqueSettings?.name || 'Al Ansar Masjid'}
             </Text>
             <Text style={styles.headerSubtitle}>Mosque Information</Text>
           </View>

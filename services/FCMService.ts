@@ -75,7 +75,7 @@ class FCMService {
         // Create notification channel for Android
         await notifee.createChannel({
           id: 'default',
-          name: 'Al-Madina Notifications',
+          name: 'Al-Ansar Notifications',
           importance: AndroidImportance.HIGH,
           description: 'Notifications for events, campaigns, and prayer times',
         });
@@ -149,7 +149,7 @@ class FCMService {
       
       // Display notification using Notifee when app is in foreground
       await notifee.displayNotification({
-        title: remoteMessage.notification?.title || 'Al-Madina Masjid',
+        title: remoteMessage.notification?.title || 'Al-Ansar Masjid',
         body: remoteMessage.notification?.body || '',
         android: {
           channelId: 'default',

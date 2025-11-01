@@ -158,7 +158,7 @@ export default function GiveTab(): React.JSX.Element {
       // Initialize Payment Sheet
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: result.clientSecret,
-        merchantDisplayName: mosqueSettings?.name || "Al Madina Masjid",
+        merchantDisplayName: mosqueSettings?.name || "Al Ansar Masjid",
         applePay: {
           merchantCountryCode: "AU",
         },
