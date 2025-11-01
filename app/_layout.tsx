@@ -25,6 +25,7 @@ export default function RootLayout() {
       <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="donations" options={{ headerShown: false }} />
         </Stack>
       </StripeProvider>
     </SafeAreaProvider>
