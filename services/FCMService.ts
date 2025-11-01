@@ -1,6 +1,6 @@
-import messaging from '@react-native-firebase/messaging';
-import auth from '@react-native-firebase/auth';
 import notifee, { AndroidImportance } from '@notifee/react-native';
+import auth from '@react-native-firebase/auth';
+import messaging from '@react-native-firebase/messaging';
 import { db } from '../firebase';
 
 class FCMService {
