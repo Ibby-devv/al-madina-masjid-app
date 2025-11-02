@@ -52,7 +52,7 @@ class NotificationService {
 
     try {
       const styleConfig = NOTIFICATION_STYLES[channelId];
-      
+
       const notification: any = {
         title,
         body,
@@ -61,13 +61,18 @@ class NotificationService {
           importance: NOTIFICATION_CHANNELS[channelId].importance,
           color: styleConfig.color,
           smallIcon: styleConfig.smallIcon || 'ic_launcher',
-          largeIcon: largeIcon || styleConfig.largeIcon,
           pressAction: {
             id: 'default',
           },
         },
         data,
       };
+
+      // Only add largeIcon if it exists
+      const finalLargeIcon = largeIcon || styleConfig.largeIcon;
+      if (finalLargeIcon) {
+        notification.android.largeIcon = finalLargeIcon;
+      }
 
       // Add BigText style if enabled
       if (styleConfig.useBigTextStyle) {

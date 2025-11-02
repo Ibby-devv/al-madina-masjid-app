@@ -20,27 +20,27 @@ export const NOTIFICATION_COLORS = {
 export const NOTIFICATION_STYLES: Record<NotificationChannelId, NotificationStyleConfig> = {
   prayer: {
     color: NOTIFICATION_COLORS.prayer,
-    smallIcon: 'ic_notification', // Will need to add this icon
+    smallIcon: 'ic_launcher', // Using default app icon
     useBigTextStyle: true,
   },
   events: {
     color: NOTIFICATION_COLORS.event,
-    smallIcon: 'ic_notification',
+    smallIcon: 'ic_launcher',
     useBigTextStyle: true,
   },
   campaigns: {
     color: NOTIFICATION_COLORS.campaign,
-    smallIcon: 'ic_notification',
+    smallIcon: 'ic_launcher',
     useBigTextStyle: true,
   },
   general: {
     color: NOTIFICATION_COLORS.general,
-    smallIcon: 'ic_notification',
+    smallIcon: 'ic_launcher',
     useBigTextStyle: true,
   },
   urgent: {
     color: NOTIFICATION_COLORS.urgent,
-    smallIcon: 'ic_notification',
+    smallIcon: 'ic_launcher',
     useBigTextStyle: true,
   },
 };

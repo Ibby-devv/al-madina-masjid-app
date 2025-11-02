@@ -18,7 +18,7 @@ export const NOTIFICATION_CHANNELS: Record<NotificationChannelId, NotificationCh
     description: 'Notifications for prayer times and reminders',
     importance: AndroidImportance.HIGH,
     sound: 'default',
-    vibrationPattern: [300, 200, 300],
+    vibrationPattern: [300, 200, 300, 200],
   },
   events: {
     id: 'events',
